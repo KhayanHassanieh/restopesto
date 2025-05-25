@@ -1,0 +1,34 @@
+/* src/styles/globals.css */
+
+/* Color Palette */
+:root {
+    --trust-blue: #3A6EA5;
+    --soft-coral: #F76C5E;
+    --fresh-sage: #A8C686;
+    --ivory-white: #FDF8F0;
+    --warm-taupe: #8E735B;
+    --slate-gray: #4A4A4A;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    scroll-behavior: smooth;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--ivory-white);
+    color: var(--slate-gray);
+  }
+  
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  ul {
+    list-style: none;
+  }
+  
