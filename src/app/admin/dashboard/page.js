@@ -1,14 +1,16 @@
+//dashboard screen
 'use client';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase/firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut  } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { doc, updateDoc, addDoc, collection, getDocs ,Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import RestaurantCard from '@/components/RestaurantCard';
-
-export default function DashboardPage() {
+import withAuth from '@/components/WithAuth';
+function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false); // New state to track auth check
   const [user, setUser] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
   const [branches, setBranches] = useState({});
@@ -25,44 +27,51 @@ export default function DashboardPage() {
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+ 
   const router = useRouter();
   const storage = getStorage();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        await fetchRestaurants();
-        setLoading(false);
-      } else {
-        router.push('/admin/login');
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+ const fetchRestaurants = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'restaurants'));
+      const data = snap.docs.map((doc) => {
+        const restaurantData = doc.data();
+        return {
+          id: doc.id,
+          ...restaurantData,
+          expiresAt: restaurantData.expiresAt?.toDate 
+            ? restaurantData.expiresAt 
+            : restaurantData.expiresAt 
+              ? new Date(restaurantData.expiresAt) 
+              : null
+        };
+      });
+      setRestaurants(data);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const fetchRestaurants = async () => {
-  const snap = await getDocs(collection(db, 'restaurants'));
-  const data = snap.docs.map((doc) => {
-    const restaurantData = doc.data();
-    return {
-      id: doc.id,
-      ...restaurantData,
-      expiresAt: restaurantData.expiresAt?.toDate 
-        ? restaurantData.expiresAt 
-        : restaurantData.expiresAt 
-          ? new Date(restaurantData.expiresAt) 
-          : null
-    };
-  });
-  setRestaurants(data);
-};
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
+ // Show loading state until auth check is complete
+  // Show loading state until auth check is complete
+  
+
+ 
 
   const fetchBranches = async (restaurantId) => {
     if (!branches[restaurantId]) {
-      const snap = await getDocs(collection(db, 'restaurants', restaurantId, 'branches'));
-      const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setBranches((prev) => ({ ...prev, [restaurantId]: data }));
+      try {
+        const snap = await getDocs(collection(db, 'restaurants', restaurantId, 'branches'));
+        const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setBranches((prev) => ({ ...prev, [restaurantId]: data }));
+      } catch (error) {
+        console.error("Error fetching branches:", error);
+      }
     }
   };
 
@@ -164,14 +173,25 @@ export default function DashboardPage() {
     if (newId && !branches[id]) await fetchBranches(id);
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#7b68ee]"></div>
-        <p className="mt-3 text-gray-600">Loading dashboard...</p>
+  const handleLogout = async () => {
+  try {
+    await signOut(auth);
+    router.push('/admin/login');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#7b68ee]"></div>
+          <p className="mt-3 text-gray-600">Loading restaurants...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,23 +201,45 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Restaurant Dashboard</h1>
             <p className="text-gray-600">Manage your restaurants and branches</p>
           </div>
-          <button
-            onClick={() => setIsAdding(!isAdding)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
-          >
-            {isAdding ? (
-              <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <div className="flex gap-2">
+   
+    <button
+      onClick={() => setIsAdding(!isAdding)}
+      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
+    >
+      {isAdding ? (
+        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ) : (
+        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      )}
+      {isAdding ? 'Cancel' : 'Add Restaurant'}
+    </button>
+    <button
+              onClick={handleLogout}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              <svg
+                className="-ml-1 mr-2 h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
               </svg>
-            ) : (
-              <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            )}
-            {isAdding ? 'Cancel' : 'Add Restaurant'}
-          </button>
-        </div>
-
+              Logout
+            </button>
+  </div>
+  </div>
         {isAdding && (
           <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div className="px-6 py-5 border-b border-gray-200">
@@ -378,3 +420,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default withAuth(DashboardPage);
