@@ -2,18 +2,27 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const url = request.nextUrl;
   const hostname = request.headers.get('host') || '';
+  const url = request.nextUrl;
 
-  // Skip subdomain logic when running locally
-  if (hostname.includes('localhost')) {
+  // ✅ Exclude static files and API routes from subdomain rewrites
+  const excludedPaths = [
+    '/_next/',
+    '/favicon.ico',
+    '/api/',
+    '/robots.txt',
+    '/manifest.json',
+  ];
+  if (excludedPaths.some(path => url.pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // Extract subdomain from live domain (e.g. spaceresto.krave.me)
-  const subdomain = hostname.replace('.krave.me', '').replace('.www', '');
+  // ✅ Skip during local dev or preview domains
+  if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
+    return NextResponse.next();
+  }
 
-  // Rewrite to /subdomain-style routing
+  const subdomain = hostname.replace('.krave.me', '').replace('www.', '');
   url.pathname = `/${subdomain}${url.pathname}`;
   return NextResponse.rewrite(url);
 }
