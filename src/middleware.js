@@ -2,26 +2,32 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const hostname = request.headers.get('host') || '';
   const url = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
 
-  // ✅ Exclude static files and API routes from subdomain rewrites
-  const excludedPaths = [
+  // ✅ Bypass static files, favicon, APIs
+  const publicFiles = [
     '/_next/',
     '/favicon.ico',
-    '/api/',
     '/robots.txt',
     '/manifest.json',
+    '/api/',
   ];
-  if (excludedPaths.some(path => url.pathname.startsWith(path))) {
+  if (publicFiles.some(path => url.pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // ✅ Skip during local dev or preview domains
+  // ✅ Skip local and vercel preview
   if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
     return NextResponse.next();
   }
 
+  // ✅ Don't rewrite for krave.me or www.krave.me (root site)
+  if (hostname === 'krave.me' || hostname === 'www.krave.me') {
+    return NextResponse.next();
+  }
+
+  // ✅ Extract subdomain and rewrite
   const subdomain = hostname.replace('.krave.me', '').replace('www.', '');
   url.pathname = `/${subdomain}${url.pathname}`;
   return NextResponse.rewrite(url);
