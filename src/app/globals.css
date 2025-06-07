@@ -24,3 +24,12 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* In your global CSS */
+.restaurant-header {
+  min-height: 210px; /* for mobile */
+}
+@media (min-width: 768px) {
+  .restaurant-header {
+    min-height: 220px; /* for desktop */
+  }
+}

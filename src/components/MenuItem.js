@@ -21,8 +21,9 @@ export default function MenuItem({ item, onSelect, compact = false }) {
           <h3 className="font-semibold text-gray-800 truncate">{item.name}</h3>
           <p className="text-sm text-gray-600 truncate">{item.description}</p>
           <div className="flex justify-between items-center mt-2">
-            <span className="font-bold text-purple-600">${item.price?.toFixed(2)}</span>
-            <button className="text-purple-600 hover:text-purple-700">
+            <span className="font-bold text-orange-400"
+            >${item.price?.toFixed(2)}</span>
+            <button className= "text-orange-400 hover:text-purple-700">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -51,7 +52,9 @@ export default function MenuItem({ item, onSelect, compact = false }) {
       <div className="p-4">
         <div className="flex justify-between items-start">
           <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
-          <span className="font-bold text-purple-600">${item.price?.toFixed(2)}</span>
+          <span className="font-bold " style={{
+    color: 'var(--theme-primary)'
+  }}>${item.price?.toFixed(2)}</span>
         </div>
         <p className="text-gray-600 text-sm mt-2">{item.description}</p>
         <button 
@@ -59,7 +62,9 @@ export default function MenuItem({ item, onSelect, compact = false }) {
             e.stopPropagation();
             onSelect();
           }}
-          className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors"
+          className="mt-4 w-full hover:brightness-110 text-white py-2 px-4 rounded-lg transition-colors" style={{
+    background: 'var(--theme-primary)'
+  }}
         >
           Add to Order
         </button>

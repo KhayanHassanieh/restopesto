@@ -2,12 +2,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase/firebaseConfig';
-import { onAuthStateChanged, signOut  } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc, addDoc, collection, getDocs ,Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import RestaurantCard from '@/components/RestaurantCard';
 import withAuth from '@/components/WithAuth';
+import { SketchPicker } from 'react-color';
 function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false); // New state to track auth check
@@ -17,7 +18,7 @@ function DashboardPage() {
   const [openBranchId, setOpenBranchId] = useState(null);
   const [editMode, setEditMode] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
-
+  const [editBackgroundImageFile, setEditBackgroundImageFile] = useState(null);
   const [name, setName] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [phone, setPhone] = useState('');
@@ -27,11 +28,14 @@ function DashboardPage() {
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
- 
+  const [backgroundImageFile, setBackgroundImageFile] = useState(null);
+  const [primaryColor, setPrimaryColor] = useState('#7b68ee');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [accentColor, setAccentColor] = useState('#f76c5e');
   const router = useRouter();
   const storage = getStorage();
 
- const fetchRestaurants = async () => {
+  const fetchRestaurants = async () => {
     try {
       const snap = await getDocs(collection(db, 'restaurants'));
       const data = snap.docs.map((doc) => {
@@ -39,10 +43,10 @@ function DashboardPage() {
         return {
           id: doc.id,
           ...restaurantData,
-          expiresAt: restaurantData.expiresAt?.toDate 
-            ? restaurantData.expiresAt 
-            : restaurantData.expiresAt 
-              ? new Date(restaurantData.expiresAt) 
+          expiresAt: restaurantData.expiresAt?.toDate
+            ? restaurantData.expiresAt
+            : restaurantData.expiresAt
+              ? new Date(restaurantData.expiresAt)
               : null
         };
       });
@@ -57,11 +61,21 @@ function DashboardPage() {
   useEffect(() => {
     fetchRestaurants();
   }, []);
- // Show loading state until auth check is complete
   // Show loading state until auth check is complete
-  
+  // Show loading state until auth check is complete
 
- 
+  const [showPicker, setShowPicker] = useState({
+    primary: false,
+    background: false,
+    accent: false
+  });
+  const togglePicker = (key) => {
+    setShowPicker((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
 
   const fetchBranches = async (restaurantId) => {
     if (!branches[restaurantId]) {
@@ -84,15 +98,22 @@ function DashboardPage() {
   const handleAddRestaurant = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
-    
+
     if (!name || !subdomain || !phone) {
       setMessage({ text: 'Please fill all required fields', type: 'error' });
       return;
     }
 
     try {
-      let uploadedUrl = '';
-      if (logoFile) uploadedUrl = await handleLogoUpload(logoFile);
+      let uploadedLogoUrl = '';
+      let uploadedBgUrl = '';
+
+      if (logoFile) uploadedLogoUrl = await handleLogoUpload(logoFile);
+      if (backgroundImageFile) {
+        const bgStorageRef = ref(storage, `restaurant_backgrounds/${backgroundImageFile.name}`);
+        await uploadBytes(bgStorageRef, backgroundImageFile);
+        uploadedBgUrl = await getDownloadURL(bgStorageRef);
+      }
 
       const restaurantData = {
         name,
@@ -101,7 +122,13 @@ function DashboardPage() {
         subscriptionDate: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: true,
-        logoUrl: uploadedUrl,
+        logoUrl: uploadedLogoUrl,
+        backgroundImageUrl: uploadedBgUrl,
+        theme: {
+          primaryColor: primaryColor,
+          backgroundColor: backgroundColor,
+          accentColor: accentColor
+        }
       };
 
       await addDoc(collection(db, 'restaurants'), restaurantData);
@@ -110,6 +137,7 @@ function DashboardPage() {
       setSubdomain('');
       setPhone('');
       setLogoFile(null);
+      setBackgroundImageFile(null);
       setIsAdding(false);
       fetchRestaurants();
     } catch (err) {
@@ -135,30 +163,54 @@ function DashboardPage() {
     setEditName(restaurant.name);
     setEditSubdomain(restaurant.subdomain);
     setEditPhone(restaurant.phone);
-    
-    // Handle date initialization
+
     let dateValue = '';
     if (restaurant.expiresAt) {
-      const date = restaurant.expiresAt.toDate 
-        ? restaurant.expiresAt.toDate() 
+      const date = restaurant.expiresAt.toDate
+        ? restaurant.expiresAt.toDate()
         : new Date(restaurant.expiresAt);
       dateValue = date.toISOString().split('T')[0];
     }
     setEditExpiresAt(dateValue);
-    
+
+    // load theme colors
+    setPrimaryColor(restaurant?.theme?.primaryColor || '#7b68ee');
+    setBackgroundColor(restaurant?.theme?.backgroundColor || '#ffffff');
+    setAccentColor(restaurant?.theme?.accentColor || '#f76c5e');
+
     setOpenBranchId(null);
   }
 };
 
-  const handleUpdateRestaurant = async (e) => {
-    
+
+  const handleUpdateRestaurant = async (updatedData) => {
     try {
+      let bgImageUrl = restaurants.find(r => r.id === editMode)?.backgroundImageUrl || '';
+      let logoUrl = restaurants.find(r => r.id === editMode)?.logoUrl || '';
+      if (updatedData.backgroundImageFile) {
+        const bgStorageRef = ref(storage, `restaurant_backgrounds/${updatedData.backgroundImageFile.name}`);
+        await uploadBytes(bgStorageRef, updatedData.backgroundImageFile);
+        bgImageUrl = await getDownloadURL(bgStorageRef);
+
+      }
+      if (updatedData.logoFile) {
+        const logoRef = ref(storage, `restaurant_logos/${updatedData.logoFile.name}`);
+        await uploadBytes(logoRef, updatedData.logoFile);
+        logoUrl = await getDownloadURL(logoRef);
+      }
       await updateDoc(doc(db, 'restaurants', editMode), {
-        name: editName,
-        subdomain: editSubdomain,
-        phone: editPhone,
-         expiresAt: Timestamp.fromDate(new Date(editExpiresAt))
-      });
+  name: updatedData.name || editName,
+  subdomain: updatedData.subdomain || editSubdomain,
+  phone: updatedData.phone || editPhone,
+  expiresAt: Timestamp.fromDate(new Date(updatedData.expiresAt || editExpiresAt)),
+  ...(bgImageUrl && { backgroundImageUrl: bgImageUrl }),
+  ...(logoUrl && { logoUrl }),
+  theme: {
+    primaryColor,
+    backgroundColor,
+    accentColor,
+  }
+});
       setEditMode(null);
       fetchRestaurants();
     } catch (err) {
@@ -174,12 +226,12 @@ function DashboardPage() {
   };
 
   const handleLogout = async () => {
-  try {
-    await signOut(auth);
-    router.push('/admin/login');
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
+    try {
+      await signOut(auth);
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   if (loading) {
@@ -202,23 +254,23 @@ function DashboardPage() {
             <p className="text-gray-600">Manage your restaurants and branches</p>
           </div>
           <div className="flex gap-2">
-   
-    <button
-      onClick={() => setIsAdding(!isAdding)}
-      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
-    >
-      {isAdding ? (
-        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ) : (
-        <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      )}
-      {isAdding ? 'Cancel' : 'Add Restaurant'}
-    </button>
-    <button
+
+            <button
+              onClick={() => setIsAdding(!isAdding)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
+            >
+              {isAdding ? (
+                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              )}
+              {isAdding ? 'Cancel' : 'Add Restaurant'}
+            </button>
+            <button
               onClick={handleLogout}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
@@ -238,8 +290,8 @@ function DashboardPage() {
               </svg>
               Logout
             </button>
-  </div>
-  </div>
+          </div>
+        </div>
         {isAdding && (
           <div className="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div className="px-6 py-5 border-b border-gray-200">
@@ -262,7 +314,24 @@ function DashboardPage() {
                     />
                   </div>
                 </div>
-
+                <div className="sm:col-span-6">
+                  <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">
+                    Background Image
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <input
+                      id="backgroundImage"
+                      name="backgroundImage"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setBackgroundImageFile(e.target.files[0])}
+                      className="py-2 px-3 block w-full shadow-sm focus:ring-[#7b68ee] focus:border-[#7b68ee] border border-gray-300 rounded-md text-gray-400"
+                    />
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    This will be the background image behind your logo on the restaurant page
+                  </p>
+                </div>
                 <div className="sm:col-span-6">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Restaurant Name <span className="text-red-500">*</span>
@@ -293,7 +362,7 @@ function DashboardPage() {
                       placeholder="your-restaurant"
                     />
                     <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                      .restopesto.com
+                      .krave.me
                     </span>
                   </div>
                 </div>
@@ -312,6 +381,91 @@ function DashboardPage() {
                     placeholder="+1234567890"
                   />
                 </div>
+                {/* Primary Color */}
+                <div className="sm:col-span-2 relative">
+                  <label className="block text-sm font-medium text-gray-700">Primary Color</label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      onClick={() => togglePicker('primary')}
+                      className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800"
+                    />
+                    <div
+                      className="w-6 h-6 rounded border cursor-pointer"
+                      style={{ backgroundColor: primaryColor }}
+                      onClick={() => togglePicker('primary')}
+                    />
+                  </div>
+                  {showPicker.primary && (
+                    <div className="mt-2 z-10">
+                      <SketchPicker
+                        className='text-gray-800'
+                        color={primaryColor}
+                        onChangeComplete={(color) => setPrimaryColor(color.hex)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Background Color */}
+                <div className="sm:col-span-2 relative">
+                  <label className="block text-sm font-medium text-gray-700">Background Color</label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                      onClick={() => togglePicker('background')}
+                      className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                    />
+                    <div
+                      className="w-6 h-6 rounded border cursor-pointer"
+                      style={{ backgroundColor: backgroundColor }}
+                      onClick={() => togglePicker('background')}
+                    />
+                  </div>
+                  {showPicker.background && (
+                    <div className="mt-2 z-10">
+                      <SketchPicker
+                        className='text-gray-800'
+                        color={backgroundColor}
+                        onChangeComplete={(color) => setBackgroundColor(color.hex)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Accent Color */}
+                <div className="sm:col-span-2 relative">
+                  <label className="block text-sm font-medium text-gray-700">Accent Color</label>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      onClick={() => togglePicker('accent')}
+                      className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800"
+                    />
+                    <div
+                      className="w-6 h-6 rounded border cursor-pointer"
+                      style={{ backgroundColor: accentColor }}
+                      onClick={() => togglePicker('accent')}
+                    />
+                  </div>
+                  {showPicker.accent && (
+                    <div className="mt-2 z-10">
+                      <SketchPicker
+                        color={accentColor}
+                        className='text-gray-800'
+                        onChangeComplete={(color) => setAccentColor(color.hex)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+
               </div>
 
               {message.text && (
@@ -391,27 +545,37 @@ function DashboardPage() {
               </div>
             ) : (
               restaurants.map((r) => (
-                <RestaurantCard
-                  key={r.id}
-                  restaurant={r}
-                  branches={branches[r.id] || []}
-                  openBranchId={openBranchId}
-                  editMode={editMode}
-                  editName={editName}
-                  editSubdomain={editSubdomain}
-                  editPhone={editPhone}
-                  editExpiresAt={editExpiresAt} // Add this prop
-                  onToggleBranches={handleToggleBranches}
-                  onToggleEdit={() => toggleEdit(r)}
-                  onEditChange={{
-                    name: setEditName,
-                    subdomain: setEditSubdomain,
-                    phone: setEditPhone,
-                     expiresAt: setEditExpiresAt, // Add this to onEditChange
-                  }}
-                  onUpdate={handleUpdateRestaurant}
-                  onToggleActive={handleToggleActive}
-                />
+                <div key={r.id}>
+                  <RestaurantCard
+                    restaurant={r}
+                    branches={branches[r.id] || []}
+                    openBranchId={openBranchId}
+                    editMode={editMode}
+                    editName={editName}
+                    editSubdomain={editSubdomain}
+                    editPhone={editPhone}
+                    editExpiresAt={editExpiresAt}
+                    onToggleBranches={handleToggleBranches}
+                    onToggleEdit={() => toggleEdit(r)}
+                    onEditChange={{
+                      name: setEditName,
+                      subdomain: setEditSubdomain,
+                      phone: setEditPhone,
+                      expiresAt: setEditExpiresAt,
+                    }}
+                    onUpdate={handleUpdateRestaurant}
+                    onToggleActive={handleToggleActive}
+
+                    primaryColor={primaryColor}
+                    setPrimaryColor={setPrimaryColor}
+                    backgroundColor={backgroundColor}
+                    setBackgroundColor={setBackgroundColor}
+                    accentColor={accentColor}
+                    setAccentColor={setAccentColor}
+
+
+                  />
+                </div>
               ))
             )}
           </div>

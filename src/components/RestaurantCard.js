@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import React, { useState, useEffect, useRef } from 'react';
+import { SketchPicker } from 'react-color';
 import BranchManager from '@/components/BranchManager';
 export default function RestaurantCard({
   restaurant,
@@ -9,43 +11,87 @@ export default function RestaurantCard({
   editName,
   editSubdomain,
   editPhone,
-   editExpiresAt,
+  editExpiresAt,
   onToggleBranches,
   onToggleEdit,
   onEditChange,
   onUpdate,
   onToggleActive,
+  primaryColor,
+  setPrimaryColor,
+  backgroundColor,
+  setBackgroundColor,
+  accentColor,
+  setAccentColor
 }) {
-    
+  const [editBackgroundImageFile, setEditBackgroundImageFile] = useState(null);
+  const [previewBackgroundImage, setPreviewBackgroundImage] = useState(null);
+  const [editLogoFile, setEditLogoFile] = useState(null);
+  const [previewLogo, setPreviewLogo] = useState(null);
   const showEdit = editMode === restaurant.id;
   const showBranches = openBranchId === restaurant.id;
- // Set initial expiration date when entering edit mode
-  
+  // Set initial expiration date when entering edit mode
+  const handleBackgroundImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditBackgroundImageFile(file);
+      setPreviewBackgroundImage(URL.createObjectURL(file));
+    }
+  };
   const handleUpdate = (e) => {
     e.preventDefault();
     onUpdate({
-      ...(editName !== undefined && { name: editName }),
-      ...(editSubdomain !== undefined && { subdomain: editSubdomain }),
-      ...(editPhone !== undefined && { phone: editPhone }),
-      ...(editExpiresAt !== undefined && { expiresAt: new Date(editExpiresAt) })
+      ...(editName && { name: editName }),
+      ...(editSubdomain && { subdomain: editSubdomain }),
+      ...(editPhone && { phone: editPhone }),
+      ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
+      backgroundImageFile: editBackgroundImageFile,
+      logoFile: editLogoFile,
+      theme: {
+        primaryColor,
+        backgroundColor,
+        accentColor
+      }
     });
+
   };
-const formatExpirationDate = (expiresAt) => {
-  if (!expiresAt) return 'Not set';
-  
-  try {
-    // Handle both Timestamp and string cases
-    const date = expiresAt.toDate ? expiresAt.toDate() : new Date(expiresAt);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  } catch (e) {
-    console.error('Error formatting date:', e);
-    return 'Invalid date';
-  }
-};
+  const [showPicker, setShowPicker] = useState({
+  primary: false,
+  background: false,
+  accent: false,
+});
+
+const togglePicker = (key) => {
+  setShowPicker((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }));
+}
+  const formatExpirationDate = (expiresAt) => {
+    if (!expiresAt) return 'Not set';
+
+    try {
+      // Handle both Timestamp and string cases
+      const date = expiresAt.toDate ? expiresAt.toDate() : new Date(expiresAt);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return 'Invalid date';
+    }
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditLogoFile(file);
+      setPreviewLogo(URL.createObjectURL(file));
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-5">
@@ -59,27 +105,30 @@ const formatExpirationDate = (expiresAt) => {
               />
             </div>
           )}
-          
+
           <div className="flex-1 min-w-0">
+
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 truncate">
                 {restaurant.name}
               </h3>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                restaurant.isActive 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
+
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${restaurant.isActive
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+                }`}>
                 {restaurant.isActive ? 'Active' : 'Inactive'}
+
               </span>
+
             </div>
-            
+
             <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
               <div className="mt-2 flex items-center text-sm text-gray-500">
                 <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                 </svg>
-                {restaurant.subdomain}.restopesto.com
+                {restaurant.subdomain}.krave.me
               </div>
               <div className="mt-2 flex items-center text-sm text-gray-500">
                 <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -88,11 +137,11 @@ const formatExpirationDate = (expiresAt) => {
                 {restaurant.phone}
               </div>
               <div className="mt-2 flex items-center text-sm text-gray-500">
-  <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-  Expires: {formatExpirationDate(restaurant.expiresAt)}
-</div>
+                <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Expires: {formatExpirationDate(restaurant.expiresAt)}
+              </div>
             </div>
           </div>
         </div>
@@ -107,7 +156,7 @@ const formatExpirationDate = (expiresAt) => {
             </svg>
             Manage Menu
           </Link>
-          
+
           <button
             onClick={() => {
               onToggleBranches(restaurant.id);
@@ -120,7 +169,7 @@ const formatExpirationDate = (expiresAt) => {
             </svg>
             {showBranches ? 'Hide Branches' : 'View Branches'}
           </button>
-          
+
           <button
             onClick={() => {
               if (showBranches) onToggleBranches(null);
@@ -133,14 +182,13 @@ const formatExpirationDate = (expiresAt) => {
             </svg>
             {showEdit ? 'Cancel Edit' : 'Edit'}
           </button>
-          
+
           <button
             onClick={() => onToggleActive(restaurant.id, restaurant.isActive)}
-            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee] ${
-              restaurant.isActive
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-gray-600 hover:bg-gray-700 text-white'
-            }`}
+            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee] ${restaurant.isActive
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-gray-600 hover:bg-gray-700 text-white'
+              }`}
           >
             <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               {restaurant.isActive ? (
@@ -168,7 +216,41 @@ const formatExpirationDate = (expiresAt) => {
                 onChange={(e) => onEditChange.name(e.target.value)}
               />
             </div>
-            
+            <div>
+              <label htmlFor="logoImage" className="block text-sm font-medium text-gray-700">Logo Image</label>
+
+              {restaurant.logoUrl && !previewLogo && (
+                <div className="mt-2 mb-4">
+                  <p className="text-sm text-gray-500 mb-1">Current logo:</p>
+                  <img
+                    src={restaurant.logoUrl}
+                    alt="Current logo"
+                    className="h-24 w-24 object-contain rounded-md border border-gray-200"
+                  />
+                </div>
+              )}
+
+              {previewLogo && (
+                <div className="mt-2 mb-4">
+                  <p className="text-sm text-gray-500 mb-1">New logo preview:</p>
+                  <img
+                    src={previewLogo}
+                    alt="New logo preview"
+                    className="h-24 w-24 object-contain rounded-md border border-gray-200"
+                  />
+                </div>
+              )}
+
+              <input
+                id="logoImage"
+                name="logoImage"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
+              />
+            </div>
+
             <div>
               <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700">Subdomain</label>
               <div className="mt-1 flex rounded-md shadow-sm">
@@ -181,11 +263,11 @@ const formatExpirationDate = (expiresAt) => {
                   onChange={(e) => onEditChange.subdomain(e.target.value)}
                 />
                 <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                  .restopesto.com
+                  .krave.me
                 </span>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
               <input
@@ -197,19 +279,145 @@ const formatExpirationDate = (expiresAt) => {
                 onChange={(e) => onEditChange.phone(e.target.value)}
               />
             </div>
-            
-           <div>
+            <div>
+              <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">
+                Background Image
+              </label>
+
+              {/* Current background image preview */}
+              {restaurant.backgroundImageUrl && !previewBackgroundImage && (
+                <div className="mt-2 mb-4">
+                  <p className="text-sm text-gray-500 mb-1">Current background image:</p>
+                  <img
+                    src={restaurant.backgroundImageUrl}
+                    alt="Current background"
+                    className="h-32 w-full object-cover rounded-md border border-gray-200"
+                  />
+                </div>
+              )}
+
+              {/* New image preview if selected */}
+              {previewBackgroundImage && (
+                <div className="mt-2 mb-4">
+                  <p className="text-sm text-gray-500 mb-1">New background image:</p>
+                  <img
+                    src={previewBackgroundImage}
+                    alt="New background preview"
+                    className="h-32 w-full object-cover rounded-md border border-gray-200"
+                  />
+                </div>
+              )}
+              <input
+                id="backgroundImage"
+                name="backgroundImage"
+                type="file"
+                accept="image/*"
+                onChange={handleBackgroundImageChange}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                This image will be displayed behind your restaurant logo
+              </p>
+            </div>
+            <div>
               <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700">Expiration Date</label>
               <input
-  id="expiresAt"
-  type="date"
-  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
-  value={editExpiresAt ?? ''}
-  onChange={(e) => onEditChange.expiresAt(e.target.value)}
-  min={new Date().toISOString().split('T')[0]}
-/>
+                id="expiresAt"
+                type="date"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editExpiresAt ?? ''}
+                onChange={(e) => onEditChange.expiresAt(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
             </div>
-            
+           {/* Theme Colors */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  {/* Primary Color */}
+  <div className="relative">
+    <label className="block text-sm font-medium text-gray-700">Primary Color</label>
+    <div className="flex items-center space-x-2 mt-1">
+      <input
+        type="text"
+        value={primaryColor}
+        onChange={(e) => setPrimaryColor(e.target.value)}
+        onClick={() => togglePicker('primary')}
+        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+      />
+      <div
+        className="w-6 h-6 rounded border cursor-pointer"
+        style={{ backgroundColor: primaryColor }}
+        onClick={() => togglePicker('primary')}
+      />
+    </div>
+    {showPicker.primary && (
+      <div className="mt-2 z-10">
+        <SketchPicker
+          color={primaryColor}
+          className=' text-gray-800'
+          onChangeComplete={(color) => setPrimaryColor(color.hex)}
+        />
+      </div>
+    )}
+  </div>
+
+  {/* Background Color */}
+  <div className="relative">
+    <label className="block text-sm font-medium text-gray-700">Background Color</label>
+    <div className="flex items-center space-x-2 mt-1">
+      <input
+        type="text"
+        value={backgroundColor}
+        onChange={(e) => setBackgroundColor(e.target.value)}
+        onClick={() => togglePicker('background')}
+        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800"
+      />
+      <div
+        className="w-6 h-6 rounded border cursor-pointer"
+        style={{ backgroundColor: backgroundColor }}
+        onClick={() => togglePicker('background')}
+      />
+    </div>
+    {showPicker.background && (
+      <div className="mt-2 z-10">
+        <SketchPicker
+          className=' text-gray-800'
+          color={backgroundColor}
+          onChangeComplete={(color) => setBackgroundColor(color.hex)}
+        />
+      </div>
+    )}
+  </div>
+
+  {/* Accent Color */}
+  <div className="relative">
+    <label className="block text-sm font-medium text-gray-700">Accent Color</label>
+    <div className="flex items-center space-x-2 mt-1">
+      <input
+        type="text"
+        value={accentColor}
+        onChange={(e) => setAccentColor(e.target.value)}
+        onClick={() => togglePicker('accent')}
+        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+      />
+      <div
+        className="w-6 h-6 rounded border cursor-pointer"
+        style={{ backgroundColor: accentColor }}
+        onClick={() => togglePicker('accent')}
+      />
+    </div>
+    {showPicker.accent && (
+      <div className="mt-2 z-10">
+        <SketchPicker
+          className=' text-gray-800'
+          color={accentColor}
+          onChangeComplete={(color) => setAccentColor(color.hex)}
+        />
+      </div>
+    )}
+  </div>
+</div>
+
+
             <div className="flex justify-end space-x-3">
               <button
                 type="button"

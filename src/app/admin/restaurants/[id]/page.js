@@ -14,7 +14,11 @@ import { db } from '@/firebase/firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export default function RestaurantMenuPage() {
+  console.log('Component mounted'); // 🔍 Check this shows in your console
+
   const { id } = useParams();
+  console.log('Restaurant ID:', id);
+
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [newCategory, setNewCategory] = useState('');
@@ -26,29 +30,53 @@ export default function RestaurantMenuPage() {
   const [newItem, setNewItem] = useState({
     name: '', price: '', typeId: '', type: '',
     description: '', addons: [], remove: [],
-    imageUrl: '', imageFile: null
+    imageUrl: '', imageFile: null,
+    isCombo: false,
+    comboPrice: '',
+    comboIncludes: ''
   });
 
   const [editItem, setEditItem] = useState({
     name: '', price: '', typeId: '', type: '',
     description: '', addons: [], remove: [],
-    imageUrl: '', imageFile: null
+    imageUrl: '', imageFile: null,
+    isCombo: false,
+    comboPrice: '',
+    comboIncludes: ''
   });
 
   useEffect(() => {
     fetchCategories();
     fetchMenuItems();
+    console.log('Fetching data...');
   }, []);
 
   const fetchCategories = async () => {
     const snap = await getDocs(collection(db, 'restaurants', id, 'categories'));
-    setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('Categories:', data); // 👈 check this
+    setCategories(data);
   };
 
   const fetchMenuItems = async () => {
     const snap = await getDocs(collection(db, 'restaurants', id, 'menu'));
-    setMenuItems(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+    const data = await Promise.all(
+      snap.docs.map(async (docSnap) => {
+        const item = { id: docSnap.id, ...docSnap.data() };
+
+        // ✅ Force addons from subcollection only
+        const addonsSnap = await getDocs(collection(db, 'restaurants', id, 'menu', docSnap.id, 'addons'));
+        item.addons = addonsSnap.docs.map(doc => doc.data());
+
+        return item;
+      })
+    );
+
+    setMenuItems(data);
   };
+
+
 
   const handleImageUpload = async (file) => {
     const fileRef = ref(storage, `menu_images/${file.name}-${Date.now()}`);
@@ -79,28 +107,42 @@ export default function RestaurantMenuPage() {
   const addMenuItem = async () => {
     const { name, price, description, type, typeId, imageFile, addons, remove } = newItem;
     if (!name || !price || !type || !typeId) return;
+
     let imageUrl = '';
     if (imageFile) imageUrl = await handleImageUpload(imageFile);
-    await addDoc(collection(db, 'restaurants', id, 'menu'), {
-      name, 
-      price: parseFloat(price), 
-      description, 
-      typeId, 
-      type,
-      addons: addons || [], 
-      remove: remove || [], 
-      imageUrl
-    });
-    setNewItem({ 
-      name: '', 
-      price: '', 
-      typeId: '', 
-      type: '', 
-      description: '', 
-      addons: [], 
-      remove: [], 
-      imageUrl: '', 
-      imageFile: null 
+
+    // 1. Add the menu item without addons
+    const newItemRef = await addDoc(collection(db, 'restaurants', id, 'menu'), {
+  name,
+  price: parseFloat(price),
+  description,
+  typeId,
+  type,
+  remove: remove || [],
+  imageUrl,
+  isCombo: newItem.isCombo || false,
+  comboPrice: newItem.comboPrice ? parseFloat(newItem.comboPrice) : null,
+  comboIncludes: newItem.comboIncludes || ''
+});
+
+    // 2. Add each addon to the subcollection
+    for (const addon of addons) {
+      // If addon is a string (from comma input), give it a default price
+      const parsed = typeof addon === 'string' ? { name: addon, price: 0 } : addon;
+      await addDoc(collection(db, 'restaurants', id, 'menu', newItemRef.id, 'addons'), parsed);
+    }
+
+    // Reset form
+    setNewItem({
+      name: '',
+      price: '',
+      typeId: '',
+      type: '',
+      description: '',
+      addons: [],
+      remove: [],
+      imageUrl: '',
+      imageFile: null
     });
     setIsAddingItem(false);
     fetchMenuItems();
@@ -119,33 +161,56 @@ export default function RestaurantMenuPage() {
       if (imageUrl) await deleteImageFromStorage(imageUrl);
       imageUrl = await handleImageUpload(editItem.imageFile);
     }
+
     await updateDoc(itemRef, {
-      name: editItem.name,
-      price: parseFloat(editItem.price),
-      description: editItem.description,
-      typeId: editItem.typeId,
-      type: editItem.type,
-      addons: editItem.addons || [],
-      remove: editItem.remove || [],
-      imageUrl
-    });
+  name: editItem.name,
+  price: parseFloat(editItem.price),
+  description: editItem.description,
+  typeId: editItem.typeId,
+  type: editItem.type,
+  remove: editItem.remove || [],
+  imageUrl,
+  isCombo: editItem.isCombo || false,
+  comboPrice: editItem.comboPrice ? parseFloat(editItem.comboPrice) : null,
+  comboIncludes: editItem.comboIncludes || ''
+});
+
+
+    // 🔁 Delete existing addons
+    const addonsCollectionRef = collection(db, 'restaurants', id, 'menu', editMode, 'addons');
+    const existingAddons = await getDocs(addonsCollectionRef);
+    for (const docSnap of existingAddons.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+
+    // ✅ Re-add updated addons
+    for (const addon of editItem.addons) {
+      const parsed = typeof addon === 'string' ? { name: addon, price: 0 } : addon;
+      await addDoc(addonsCollectionRef, parsed);
+    }
+
+    // ✅ Now outside the loop
     setEditMode(null);
     fetchMenuItems();
-  };
+  }; // <-- ✅ this was missing!
 
   const startEdit = (item) => {
     setEditMode(item.id);
-    setEditItem({
-      name: item.name,
-      price: item.price.toString(),
-      description: item.description,
-      typeId: item.typeId,
-      type: item.type,
-      addons: item.addons || [],
-      remove: item.remove || [],
-      imageUrl: item.imageUrl || '',
-      imageFile: null
-    });
+   setEditItem({
+  name: item.name,
+  price: item.price.toString(),
+  description: item.description,
+  typeId: item.typeId,
+  type: item.type,
+  addons: item.addons || [],
+  remove: item.remove || [],
+  imageUrl: item.imageUrl || '',
+  imageFile: null,
+  isCombo: item.isCombo || false,
+  comboPrice: item.comboPrice || '',
+  comboIncludes: item.comboIncludes || ''
+});
+
   };
 
   const exportMenuAsJSON = () => {
@@ -206,7 +271,7 @@ export default function RestaurantMenuPage() {
                   Add
                 </button>
               </div>
-              
+
               <div className="space-y-2">
                 {categories.map(category => (
                   <div key={category.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
@@ -233,7 +298,7 @@ export default function RestaurantMenuPage() {
                 </button>
               </div>
             </div>
-            
+
             {isAddingItem && (
               <div className="p-4 space-y-4 border-b border-gray-200">
                 <input
@@ -242,7 +307,7 @@ export default function RestaurantMenuPage() {
                   onChange={(e) => setNewItem({ ...newItem, imageFile: e.target.files[0] })}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
                 />
-                
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
@@ -254,7 +319,7 @@ export default function RestaurantMenuPage() {
                       className="focus:border-[#7b68ee] focus:ring-[#7b68ee] mt-1 block w-full rounded-md border-gray-300 shadow-sm  sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                     />
                   </div>
-                  
+
                   <div>
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price</label>
                     <input
@@ -266,7 +331,7 @@ export default function RestaurantMenuPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
                   <select
@@ -274,10 +339,10 @@ export default function RestaurantMenuPage() {
                     value={newItem.typeId}
                     onChange={(e) => {
                       const selected = categories.find(cat => cat.id === e.target.value);
-                      setNewItem({ 
-                        ...newItem, 
-                        typeId: selected?.id || '', 
-                        type: selected?.name || '' 
+                      setNewItem({
+                        ...newItem,
+                        typeId: selected?.id || '',
+                        type: selected?.name || ''
                       });
                     }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
@@ -288,7 +353,7 @@ export default function RestaurantMenuPage() {
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
                   <textarea
@@ -299,19 +364,68 @@ export default function RestaurantMenuPage() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="addons" className="block text-sm font-medium text-gray-700">Add-ons</label>
-                    <input
-                      id="addons"
-                      type="text"
-                      placeholder="Comma separated"
-                      onChange={(e) => setNewItem({ ...newItem, addons: e.target.value.split(',').map(s => s.trim()) })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
-                    />
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Add-ons</label>
+                      <div className="space-y-2">
+                        {newItem.addons.map((addon, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Add-on name"
+
+                              value={addon.name}
+                              onChange={(e) => {
+                                const updated = [...newItem.addons];
+                                updated[index].name = e.target.value;
+                                setNewItem({ ...newItem, addons: updated });
+                              }}
+                              className="w-2/3 rounded-md placeholder:text-gray-500 placeholder:border-gray-500 border-gray-500 p-2 text-sm  text-gray-800"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Price"
+                              value={isNaN(addon.price) ? '' : addon.price}
+                              onChange={(e) => {
+                                const updated = [...newItem.addons];
+                                updated[index].price = parseFloat(e.target.value) || 0;
+                                setNewItem({ ...newItem, addons: updated });
+                              }}
+                              className="w-1/3 rounded-md border-gray-300 p-2 text-sm  placeholder:text-gray-500 text-gray-800"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = newItem.addons.filter((_, i) => i !== index);
+                                setNewItem({ ...newItem, addons: updated });
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNewItem({
+                              ...newItem,
+                              addons: [...newItem.addons, { name: '', price: 0 }]
+                            })
+                          }
+                          className="text-blue-600 hover:text-blue-800 text-sm mt-2"
+                        >
+                          + Add Add-on
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
-                  
+
                   <div>
                     <label htmlFor="remove" className="block text-sm font-medium text-gray-700">Removables</label>
                     <input
@@ -322,8 +436,43 @@ export default function RestaurantMenuPage() {
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Is this a Combo?</label>
+                    <input
+                      type="checkbox"
+                      checked={newItem.isCombo}
+                      onChange={(e) => setNewItem({ ...newItem, isCombo: e.target.checked })}
+                      className="mt-1 "
+                    />
+                  </div>
+
+                  {newItem.isCombo && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Combo Price</label>
+                        <input
+                          type="number"
+                          placeholder='Insert price'
+                          value={newItem.comboPrice}
+                          onChange={(e) => setNewItem({ ...newItem, comboPrice: e.target.value })}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
+
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Combo Includes</label>
+                        <textarea
+                          value={newItem.comboIncludes}
+                          onChange={(e) => setNewItem({ ...newItem, comboIncludes: e.target.value })}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
+
+                        />
+                      </div>
+                    </>
+                  )}
+
                 </div>
-                
+
                 <button
                   onClick={addMenuItem}
                   className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
@@ -332,15 +481,14 @@ export default function RestaurantMenuPage() {
                 </button>
               </div>
             )}
-            
+
             {/* Category Filter */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setSelectedCategoryId('')}
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    selectedCategoryId === '' ? 'bg-[#7b68ee] text-white' : 'bg-gray-100 text-gray-800'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${selectedCategoryId === '' ? 'bg-[#7b68ee] text-white' : 'bg-gray-100 text-gray-800'
+                    }`}
                 >
                   All
                 </button>
@@ -348,16 +496,15 @@ export default function RestaurantMenuPage() {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategoryId(cat.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      selectedCategoryId === cat.id ? 'bg-[#7b68ee] text-white' : 'bg-gray-100 text-gray-800'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${selectedCategoryId === cat.id ? 'bg-[#7b68ee] text-white' : 'bg-gray-100 text-gray-800'
+                      }`}
                   >
                     {cat.name}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             {/* Menu Items List */}
             <div className="divide-y divide-gray-200">
               {menuItems
@@ -367,42 +514,48 @@ export default function RestaurantMenuPage() {
                     <div className="flex gap-4">
                       {item.imageUrl && (
                         <div className="flex-shrink-0">
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.name} 
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
                             className="h-20 w-20 rounded-lg object-cover border border-gray-200"
                           />
                         </div>
                       )}
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <h4 className="text-lg font-semibold text-gray-900">{item.name}</h4>
                           <span className="text-lg font-medium text-gray-900">${item.price}</span>
                         </div>
-                        
+
                         <p className="mt-1 text-sm text-gray-600">{item.description}</p>
-                        
+
                         <div className="mt-2 flex flex-wrap gap-2">
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                             {categories.find(cat => cat.id === item.typeId)?.name || 'Uncategorized'}
                           </span>
-                          
+
+                          <p className="text-gray-600 text-sm mt-2">{item.description}</p>
+
                           {item.addons?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                              Add-ons: {item.addons.join(', ')}
-                            </span>
+                            <div className="mt-2 text-sm text-green-700">
+                              <span className="font-medium">Add-ons: </span>
+                              {item.addons.map(a => a.name || a).join(', ')}
+                            </div>
                           )}
-                          
+
                           {item.remove?.length > 0 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                              Removables: {item.remove.join(', ')}
-                            </span>
+                            <div className="mt-1 text-sm text-purple-700">
+                              <span className="font-medium">Removables: </span>
+                              {item.remove.join(', ')}
+                            </div>
                           )}
+
+
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => startEdit(item)}
@@ -417,7 +570,7 @@ export default function RestaurantMenuPage() {
                         Delete
                       </button>
                     </div>
-                    
+
                     {/* Edit Form */}
                     {editMode === item.id && (
                       <form onSubmit={handleUpdateItem} className="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
@@ -427,7 +580,7 @@ export default function RestaurantMenuPage() {
                           onChange={(e) => setEditItem({ ...editItem, imageFile: e.target.files[0] })}
                           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
                         />
-                        
+
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
                             <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">Name</label>
@@ -439,7 +592,7 @@ export default function RestaurantMenuPage() {
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                             />
                           </div>
-                          
+
                           <div>
                             <label htmlFor="edit-price" className="block text-sm font-medium text-gray-700">Price</label>
                             <input
@@ -451,7 +604,7 @@ export default function RestaurantMenuPage() {
                             />
                           </div>
                         </div>
-                        
+
                         <div>
                           <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700">Category</label>
                           <select
@@ -459,10 +612,10 @@ export default function RestaurantMenuPage() {
                             value={editItem.typeId}
                             onChange={(e) => {
                               const selected = categories.find(cat => cat.id === e.target.value);
-                              setEditItem({ 
-                                ...editItem, 
-                                typeId: selected?.id || '', 
-                                type: selected?.name || '' 
+                              setEditItem({
+                                ...editItem,
+                                typeId: selected?.id || '',
+                                type: selected?.name || ''
                               });
                             }}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
@@ -473,7 +626,7 @@ export default function RestaurantMenuPage() {
                             ))}
                           </select>
                         </div>
-                        
+
                         <div>
                           <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">Description</label>
                           <textarea
@@ -484,19 +637,67 @@ export default function RestaurantMenuPage() {
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                           />
                         </div>
-                        
+
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
                             <label htmlFor="edit-addons" className="block text-sm font-medium text-gray-700">Add-ons</label>
-                            <input
-                              id="edit-addons"
-                              type="text"
-                              value={editItem.addons.join(', ')}
-                              onChange={(e) => setEditItem({ ...editItem, addons: e.target.value.split(',').map(s => s.trim()) })}
-                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
-                            />
+                            <div>
+
+                              <div className="space-y-2">
+                                {editItem.addons.map((addon, index) => (
+                                  <div key={index} className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Add-on name"
+                                      value={addon.name}
+                                      onChange={(e) => {
+                                        const updated = [...editItem.addons];
+                                        updated[index].name = e.target.value;
+                                        setEditItem({ ...editItem, addons: updated });
+                                      }}
+                                      className="w-2/3 rounded-md border-gray-300 p-2 text-sm  text-gray-800"
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="Price"
+                                      value={addon.price}
+                                      onChange={(e) => {
+                                        const updated = [...editItem.addons];
+                                        updated[index].price = parseFloat(e.target.value);
+                                        setEditItem({ ...editItem, addons: updated });
+                                      }}
+                                      className="w-1/3 rounded-md border-gray-300 p-2 text-sm  text-gray-800"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = editItem.addons.filter((_, i) => i !== index);
+                                        setEditItem({ ...editItem, addons: updated });
+                                      }}
+                                      className="text-red-600 hover:text-red-800 text-sm"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditItem({
+                                      ...editItem,
+                                      addons: [...editItem.addons, { name: '', price: 0 }]
+                                    })
+                                  }
+                                  className="text-blue-600 hover:text-blue-800 text-sm mt-2"
+                                >
+                                  + Add Add-on
+                                </button>
+                              </div>
+                            </div>
+
                           </div>
-                          
+
                           <div>
                             <label htmlFor="edit-remove" className="block text-sm font-medium text-gray-700">Removables</label>
                             <input
@@ -507,8 +708,42 @@ export default function RestaurantMenuPage() {
                               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
                             />
                           </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Is this a Combo?</label>
+                            <input
+                              type="checkbox"
+                              checked={editItem.isCombo}
+                              onChange={(e) => setEditItem({ ...editItem, isCombo: e.target.checked })}
+                              className="mt-1 "
+                            />
+                          </div>
+
+                          {editItem.isCombo && (
+                            <>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Combo Price</label>
+                                <input
+                                  type="number"
+                                  placeholder='Insert price'
+                                  value={editItem.comboPrice}
+                                  onChange={(e) => setEditItem({ ...editItem, comboPrice: e.target.value })}
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
+
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">Combo Includes</label>
+                                <textarea
+                                  value={editItem.comboIncludes}
+                                  onChange={(e) => setEditItem({ ...editItem, comboIncludes: e.target.value })}
+                                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#7b68ee] focus:ring-[#7b68ee] sm:text-sm border p-2  text-gray-800 placeholder-gray-400"
+
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
-                        
+
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
