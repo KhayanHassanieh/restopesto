@@ -95,7 +95,7 @@ export default function RestaurantPage({ subdomain }) {
         setBranches(processedBranches);
         if (incomingCartId) {
           setCartId(incomingCartId);
-          router.replace(`/${subdomain}?cartId=${incomingCartId}`);
+          router.replace(`?cartId=${cartId}`);
 
           const unsubscribe = subscribeToCart(incomingCartId, (cartData) => {
             setCart(cartData.items || []);
@@ -634,7 +634,9 @@ export default function RestaurantPage({ subdomain }) {
             <div className="border-t border-gray-200 pt-4">
               <button
                 onClick={() => {
-                  const urlWithCart = `${window.location.origin}/${subdomain}?cartId=${cartId}`;
+                 const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
+
+
                   router.replace(`/${subdomain}?cartId=${cartId}`); // 👈 update the browser URL now
                   navigator.clipboard.writeText(urlWithCart);
                   alert('Cart link copied!');
