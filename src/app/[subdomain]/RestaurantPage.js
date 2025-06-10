@@ -95,7 +95,8 @@ export default function RestaurantPage({ subdomain }) {
         setBranches(processedBranches);
         if (incomingCartId) {
           setCartId(incomingCartId);
-          router.replace(`?cartId=${cartId}`);
+          router.replace(`?cartId=${incomingCartId}`);
+
 
           const unsubscribe = subscribeToCart(incomingCartId, (cartData) => {
             setCart(cartData.items || []);
@@ -118,7 +119,8 @@ export default function RestaurantPage({ subdomain }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && cartId) {
-      setShareableUrl(`${window.location.origin}/${subdomain}?cartId=${cartId}`);
+      setShareableUrl(`${window.location.origin}?cartId=${cartId}`);
+
     }
   }, [cartId, subdomain]);
 
@@ -161,7 +163,8 @@ export default function RestaurantPage({ subdomain }) {
     if (!activeCartId) {
       activeCartId = await createCart({ restaurantId: restaurant.id });
       setCartId(activeCartId);
-      router.replace(`/${subdomain}?cartId=${activeCartId}`);
+      router.replace(`?cartId=${activeCartId}`);
+
 
       // ✅ Subscribe after creating the cart
       subscribeToCart(activeCartId, (cartData) => {
@@ -634,7 +637,7 @@ export default function RestaurantPage({ subdomain }) {
             <div className="border-t border-gray-200 pt-4">
               <button
                 onClick={() => {
-                 const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
+                  const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
 
 
                   router.replace(`?cartId=${cartId}`); // 👈 update the browser URL now
@@ -749,55 +752,55 @@ export default function RestaurantPage({ subdomain }) {
               </button>
               <button
                 onClick={async () => {
-  try {
-    // Save the order in Firestore
-    const orderRef = await createOrder(orderData);
+                  try {
+                    // Save the order in Firestore
+                    const orderRef = await createOrder(orderData);
 
-    // Clear cart locally + remotely
-    setCart([]);
-    await clearCart(cartId);
+                    // Clear cart locally + remotely
+                    setCart([]);
+                    await clearCart(cartId);
 
-    // Fetch phone number of selected branch
-    const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
-    const phone = branchDoc?.data()?.phone;
+                    // Fetch phone number of selected branch
+                    const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
+                    const phone = branchDoc?.data()?.phone;
 
-    if (!phone) {
-      alert('Could not find branch phone number.');
-      return;
-    }
+                    if (!phone) {
+                      alert('Could not find branch phone number.');
+                      return;
+                    }
 
-    // Format WhatsApp message
-    const messageLines = [
-      `*New Order*`,
-      `Name: ${orderData.fullName}`,
-      `Phone: +961${orderData.mobileNumber}`,
-      `Region: ${orderData.region}, Area: ${orderData.area}`,
-      `Address: ${orderData.addressDetails}`,
-      '',
-      ...orderData.cart.map((item, i) => {
-        const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
-        const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
-        const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
-        return [line, addons, removables].filter(Boolean).join('\n');
-      }),
-      '',
-      `Total: $${orderData.total.toFixed(2)}`
-    ];
+                    // Format WhatsApp message
+                    const messageLines = [
+                      `*New Order*`,
+                      `Name: ${orderData.fullName}`,
+                      `Phone: +961${orderData.mobileNumber}`,
+                      `Region: ${orderData.region}, Area: ${orderData.area}`,
+                      `Address: ${orderData.addressDetails}`,
+                      '',
+                      ...orderData.cart.map((item, i) => {
+                        const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
+                        const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
+                        const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
+                        return [line, addons, removables].filter(Boolean).join('\n');
+                      }),
+                      '',
+                      `Total: $${orderData.total.toFixed(2)}`
+                    ];
 
-    const encodedMessage = encodeURIComponent(messageLines.join('\n'));
+                    const encodedMessage = encodeURIComponent(messageLines.join('\n'));
 
-    // ✅ Show thank-you screen in case redirect doesn't work
-    setOrderPlaced(true);
-    setCheckoutStep(null);
-    setCartVisible(false);
+                    // ✅ Show thank-you screen in case redirect doesn't work
+                    setOrderPlaced(true);
+                    setCheckoutStep(null);
+                    setCartVisible(false);
 
-    // 🔁 Redirect to WhatsApp
-    window.location.href = `https://wa.me/${phone}?text=${encodedMessage}`;
-  } catch (error) {
-    console.error('Error placing order:', error);
-    alert('Failed to place order. Please try again.');
-  }
-}}
+                    // 🔁 Redirect to WhatsApp
+                    window.location.href = `https://wa.me/${phone}?text=${encodedMessage}`;
+                  } catch (error) {
+                    console.error('Error placing order:', error);
+                    alert('Failed to place order. Please try again.');
+                  }
+                }}
 
                 className="px-4 py-2 text-white rounded-md hover:brightness-110 transition-colors" style={{
                   background: 'var(--theme-primary)',
