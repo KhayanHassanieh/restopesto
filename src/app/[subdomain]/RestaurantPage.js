@@ -637,7 +637,7 @@ export default function RestaurantPage({ subdomain }) {
                  const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
 
 
-                  router.replace(`/${subdomain}?cartId=${cartId}`); // 👈 update the browser URL now
+                  router.replace(`?cartId=${cartId}`); // 👈 update the browser URL now
                   navigator.clipboard.writeText(urlWithCart);
                   alert('Cart link copied!');
                 }}
