@@ -1,8 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import MenuItem from '@/components/MenuItem';
+import CheckoutForm from '@/components/CheckoutForm';
+import { getCart, addItemToCart, createCart, subscribeToCart } from '@/utils/cartService';
+import { createOrder, clearCart } from '@/utils/orderService';
+import { useSearchParams, useRouter } from 'next/navigation';
+
 export default function RestaurantPage({ subdomain }) {
   const [restaurant, setRestaurant] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -16,6 +21,16 @@ export default function RestaurantPage({ subdomain }) {
   const [isVisible, setIsVisible] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isComboSelected, setIsComboSelected] = useState(false);
+  const [cartId, setCartId] = useState(null);
+  const [shareableUrl, setShareableUrl] = useState('');
+  const searchParams = useSearchParams();
+  const incomingCartId = searchParams.get('cartId');
+  const [checkoutStep, setCheckoutStep] = useState(null); // null, 'address', 'payment'
+  const [orderData, setOrderData] = useState(null);
+  const [branches, setBranches] = useState([]);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +71,41 @@ export default function RestaurantPage({ subdomain }) {
         }));
 
         setMenuItems(itemsWithAddons);
+        // Fetch branches
+        const branchesSnapshot = await getDocs(
+          collection(db, 'restaurants', restaurantDoc.id, 'branches')
+        );
+        const branchesData = branchesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setBranches(branchesData);
+        // In your fetchData function, after getting branches:
+        const processedBranches = branchesSnapshot.docs.map(doc => {
+          const branchData = doc.data();
+          return {
+            id: doc.id,
+            city: branchData.city,
+            // Handle both array and object formats for areas
+            areas: Array.isArray(branchData.areas)
+              ? branchData.areas
+              : Object.values(branchData.areas || {})
+          };
+        });
+        setBranches(processedBranches);
+        if (incomingCartId) {
+          setCartId(incomingCartId);
+          router.replace(`/${subdomain}?cartId=${incomingCartId}`);
+
+          const unsubscribe = subscribeToCart(incomingCartId, (cartData) => {
+            setCart(cartData.items || []);
+          });
+
+          return () => {
+            if (unsubscribe) unsubscribe();
+          };
+        }
+
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -67,6 +117,12 @@ export default function RestaurantPage({ subdomain }) {
   }, [subdomain]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && cartId) {
+      setShareableUrl(`${window.location.origin}/${subdomain}?cartId=${cartId}`);
+    }
+  }, [cartId, subdomain]);
+
+  useEffect(() => {
     if (selectedItem) {
       document.body.style.overflow = 'hidden';
       setTimeout(() => setIsVisible(true), 10);
@@ -76,41 +132,73 @@ export default function RestaurantPage({ subdomain }) {
     }
   }, [selectedItem]);
 
-  
-useEffect(() => {
-  if (restaurant?.theme) {
-    const root = document.documentElement;
-    root.style.setProperty('--theme-primary', restaurant.theme.primaryColor || '#7b68ee');
-    root.style.setProperty('--theme-background', restaurant.theme.backgroundColor || '#ffffff');
-    root.style.setProperty('--theme-accent', restaurant.theme.accentColor || '#f76c5e');
-  }
-}, [restaurant]);
+  useEffect(() => {
+    if (restaurant?.theme) {
+      const root = document.documentElement;
+      root.style.setProperty('--theme-primary', restaurant.theme.primaryColor || '#7b68ee');
+      root.style.setProperty('--theme-background', restaurant.theme.backgroundColor || '#ffffff');
+      root.style.setProperty('--theme-accent', restaurant.theme.accentColor || '#f76c5e');
+    }
+  }, [restaurant]);
 
 
   const scrollToCategory = (categoryId) => {
     const element = document.getElementById(`category-${categoryId}`);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const addToCart = (item, selectedAddons = [], selectedRemovables = [], quantity = 1, isComboSelected = false) => {
+  const addToCart = async (
+    item,
+    selectedAddons = [],
+    selectedRemovables = [],
+    quantity = 1,
+    isComboSelected = false
+  ) => {
+    let activeCartId = cartId;
+
+    if (!activeCartId) {
+      activeCartId = await createCart({ restaurantId: restaurant.id });
+      setCartId(activeCartId);
+      router.replace(`/${subdomain}?cartId=${activeCartId}`);
+
+      // ✅ Subscribe after creating the cart
+      subscribeToCart(activeCartId, (cartData) => {
+        setCart(cartData.items || []);
+      });
+    }
+
     const basePrice = isComboSelected && item.comboPrice ? item.comboPrice : item.price;
+    const addonsTotal = selectedAddons.reduce((sum, addon) => sum + (addon.price || 0), 0);
+    const finalTotal = (basePrice + addonsTotal) * quantity;
 
     const itemWithCustomization = {
-      ...item,
+      itemId: item.id,
+      name: item.name,
+      isComboSelected,
+      comboIncludes: isComboSelected ? item.comboIncludes : '',
+      basePrice,
+      addonsTotal,
+      finalTotal,
       selectedAddons,
       selectedRemovables,
       quantity,
-      isComboSelected,
-      finalPrice: basePrice,
-      customKey: `${item.id}-${Date.now()}`,
+      customKey: `${item.id}-${Date.now()}`
     };
 
     setCart(prev => [...prev, itemWithCustomization]);
+    addItemToCart(activeCartId, itemWithCustomization);
+
     setSelectedItem(null);
     setQuantity(1);
+    setSelectedAddons([]);
+    setSelectedRemovables([]);
+    setIsComboSelected(false);
   };
+
+
+
 
   const updateQuantity = (itemKey, newQuantity) => {
     if (newQuantity < 1) {
@@ -122,13 +210,18 @@ useEffect(() => {
 
   const removeFromCart = (itemKey) => {
     setCart(prev => prev.filter(item => item.customKey !== itemKey));
+    removeItemFromCart(cartId, itemKey)
   };
 
   const cartTotal = cart.reduce((sum, item) => {
-    const addonsTotal = item.selectedAddons?.reduce((a, addon) => a + (addon.price || 0), 0) || 0;
-    const quantity = item.quantity || 1;
-    return sum + ((item.finalPrice + addonsTotal) * quantity);
+    const total =
+      typeof item.finalTotal === 'number'
+        ? item.finalTotal
+        : ((item.basePrice || 0) + (item.addonsTotal || 0)) * (item.quantity || 1);
+
+    return sum + total;
   }, 0);
+
 
 
 
@@ -161,7 +254,7 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen"
-     style={{ backgroundColor: 'var(--theme-background)' }}>
+      style={{ backgroundColor: 'var(--theme-background)' }}>
       {/* Header with Logo */}
       <header className="relative h-64 w-full overflow-hidden">
         <img
@@ -190,7 +283,7 @@ useEffect(() => {
 
       {/* Categories Navigation */}
       <div className="sticky top-0 z-30 shadow-sm py-3 px-4"
-       style={{ backgroundColor: 'var(--theme-background)' }}>
+        style={{ backgroundColor: 'var(--theme-background)' }}>
         <div className="overflow-x-auto">
           <div className="flex justify-center min-w-fit w-max mx-auto space-x-2 pb-2">
             {categories.map(category => (
@@ -198,9 +291,9 @@ useEffect(() => {
                 key={category.id}
                 onClick={() => scrollToCategory(category.id)}
                 className="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 whitespace-nowrap"
-                 style={{
-    backgroundColor: 'var(--theme-accent)'
-  }}
+                style={{
+                  backgroundColor: 'var(--theme-accent)'
+                }}
               >
                 {category.name}
               </button>
@@ -309,11 +402,11 @@ useEffect(() => {
                       onChange={(e) => setIsComboSelected(e.target.checked)}
                       className="form-checkbox h-5 w-5 text-orange-600 rounded"
                     />
-                  <span className="text-gray-800">
-  {selectedItem.comboPrice > selectedItem.price
-    ? `Get as combo +$${(selectedItem.comboPrice - selectedItem.price).toFixed(2)}`
-    : `Get as combo (save $${(selectedItem.price - selectedItem.comboPrice).toFixed(2)})`}
-</span>
+                    <span className="text-gray-800">
+                      {selectedItem.comboPrice > selectedItem.price
+                        ? `Get as combo +$${(selectedItem.comboPrice - selectedItem.price).toFixed(2)}`
+                        : `Get as combo (save $${(selectedItem.price - selectedItem.comboPrice).toFixed(2)})`}
+                    </span>
 
                   </label>
                   <p className="text-gray-600 text-sm mt-1">{selectedItem.comboIncludes}</p>
@@ -385,10 +478,10 @@ useEffect(() => {
                 {/* Left side: Price + Quantity */}
                 <div className="flex items-center gap-4">
                   <span className="text-xl font-bold text-gray-800">
-                   ${(
-  ((isComboSelected ? selectedItem.comboPrice : selectedItem.price) +
-    (selectedAddons?.reduce((sum, a) => sum + (a.price || 0), 0) || 0)) * quantity
-).toFixed(2)}
+                    ${(
+                      ((isComboSelected ? selectedItem.comboPrice : selectedItem.price) +
+                        (selectedAddons?.reduce((sum, a) => sum + (a.price || 0), 0) || 0)) * quantity
+                    ).toFixed(2)}
 
 
                   </span>
@@ -418,14 +511,14 @@ useEffect(() => {
                       selectedItem,
                       selectedAddons,
                       selectedRemovables,
-                       quantity,
+                      quantity,
                       isComboSelected
                     );
                   }}
-                  className="hover:brightness-120 text-white py-2 px-6 rounded-lg font-medium transition-colors"  style={{
-    background: 'var(--theme-primary)',
-    
-  }}
+                  className="hover:brightness-120 text-white py-2 px-6 rounded-lg font-medium transition-colors" style={{
+                    background: 'var(--theme-primary)',
+
+                  }}
                 >
                   Add to Cart
                 </button>
@@ -468,58 +561,58 @@ useEffect(() => {
                   <div key={item.customKey} className="py-4">
                     <div className="flex justify-between">
                       <div className="flex-1">
-  <h3 className="font-medium text-gray-800">
-    {item.name}
-    {item.isComboSelected && (
-      <span className="ml-2 text-sm text-orange-500 font-semibold">(Combo)</span>
-    )}
-  </h3>
+                        <h3 className="font-medium text-gray-800">
+                          {item.name}
+                          {item.isComboSelected && (
+                            <span className="ml-2 text-sm text-orange-500 font-semibold" style={{
+                              color: 'var(--theme-primary)',
 
-  {item.isComboSelected && item.comboIncludes && (
-    <p className="text-sm text-gray-600 mt-1">{item.comboIncludes}</p>
-  )}
+                            }}>(Combo)</span>
+                          )}
+                        </h3>
 
-  {item.selectedAddons?.length > 0 && (
-    <div className="mt-1 text-sm text-gray-600">
-      {item.selectedAddons.map(addon => (
-        <div key={addon.id}>+ {addon.name}</div>
-      ))}
-    </div>
-  )}
+                        {item.isComboSelected && item.comboIncludes && (
+                          <p className="text-sm text-gray-600 mt-1">{item.comboIncludes}</p>
+                        )}
 
-  {item.selectedRemovables?.length > 0 && (
-    <div className="mt-1 text-sm text-gray-600">
-      {item.selectedRemovables.map(removable => (
-        <div key={removable}>- {removable}</div>
-      ))}
-    </div>
-  )}
-</div>
+                        {item.selectedAddons?.length > 0 && (
+                          <div className="mt-1 text-sm text-gray-600">
+                            {item.selectedAddons.map(addon => (
+                              <div key={addon.id}>+ {addon.name}</div>
+                            ))}
+                          </div>
+                        )}
+
+                        {item.selectedRemovables?.length > 0 && (
+                          <div className="mt-1 text-sm text-gray-600">
+                            {item.selectedRemovables.map(removable => (
+                              <div key={removable}>- {removable}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
                       <div className="ml-4 flex flex-col items-end">
-  <span className="font-medium text-gray-800">
-    ${(
-      ((item.isComboSelected && item.comboPrice ? item.comboPrice : item.price) +
-        (item.selectedAddons?.reduce((sum, a) => sum + (a.price || 0), 0) || 0)) *
-      item.quantity
-    ).toFixed(2)}
-  </span>
-  <div className="flex items-center mt-2">
-    <button
-      onClick={() => updateQuantity(item.customKey, item.quantity - 1)}
-      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
-    >
-      -
-    </button>
-    <span className="mx-2 w-6 text-center text-gray-800">{item.quantity}</span>
-    <button
-      onClick={() => updateQuantity(item.customKey, item.quantity + 1)}
-      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
-    >
-      +
-    </button>
-  </div>
-</div>
+                        <span className="font-medium text-gray-800">
+                          ${item.finalTotal?.toFixed(2) || '0.00'}
+                        </span>
+
+                        <div className="flex items-center mt-2">
+                          <button
+                            onClick={() => updateQuantity(item.customKey, item.quantity - 1)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          >
+                            -
+                          </button>
+                          <span className="mx-2 w-6 text-center text-gray-800">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(item.customKey, item.quantity + 1)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
 
                     </div>
                     <button
@@ -539,6 +632,19 @@ useEffect(() => {
 
           {cart.length > 0 && (
             <div className="border-t border-gray-200 pt-4">
+              <button
+                onClick={() => {
+                  const urlWithCart = `${window.location.origin}/${subdomain}?cartId=${cartId}`;
+                  router.replace(`/${subdomain}?cartId=${cartId}`); // 👈 update the browser URL now
+                  navigator.clipboard.writeText(urlWithCart);
+                  alert('Cart link copied!');
+                }}
+
+                className="text-sm text-blue-600 underline mt-2"
+              >
+                Share this cart
+              </button>
+
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
@@ -551,7 +657,13 @@ useEffect(() => {
                 <span className="text-gray-800">Total:</span>
                 <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
               </div>
-              <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-medium transition-colors">
+              <button
+                onClick={() => setCheckoutStep('address')}
+                className="w-full hover:brightness-110 text-white py-3 px-4 rounded-lg font-medium transition-colors" style={{
+                  background: 'var(--theme-primary)',
+
+                }}
+              >
                 Proceed to Checkout
               </button>
             </div>
@@ -563,8 +675,11 @@ useEffect(() => {
       {cart.length > 0 && (
         <button
           onClick={() => setCartVisible(true)}
-          className="fixed bottom-6 right-6 bg-orange-500 text-white p-4 rounded-full shadow-lg z-10 flex items-center"
-        >
+          className="fixed bottom-6 right-6 hover:brightness-105 text-white p-4 rounded-full shadow-lg z-10 flex items-center"
+          style={{
+            background: 'var(--theme-primary)',
+
+          }}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
@@ -575,6 +690,123 @@ useEffect(() => {
             ${cartTotal.toFixed(2)}
           </span>
         </button>
+      )}
+      {checkoutStep === 'address' && (
+        <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-50 flex items-center justify-center p-4">
+          <CheckoutForm
+            restaurantId={restaurant.id}
+            cartTotal={cartTotal * 1.1}
+            onBack={() => setCheckoutStep(null)}
+            onComplete={(addressData) => {
+              setOrderData({
+                ...addressData,
+                cart,
+                total: cartTotal * 1.1,
+                restaurantId: restaurant.id,
+                cartId
+              });
+              setCheckoutStep('payment');
+            }}
+          />
+        </div>
+      )}
+
+      {checkoutStep === 'payment' && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
+
+            <div className="space-y-4 mb-6">
+              <div className="p-4 border border-gray-300 rounded-md">
+                <h3 className="font-medium text-gray-800 mb-2">Cash on Delivery</h3>
+                <p className="text-sm text-gray-600">Pay when you receive your order</p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">Tax (10%):</span>
+                <span className="text-gray-800">${(cartTotal * 0.1).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between mb-4 font-bold">
+                <span className="text-gray-800">Total:</span>
+                <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setCheckoutStep('address')}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={async () => {
+  try {
+    // Save the order in Firestore
+    const orderRef = await createOrder(orderData);
+
+    // Clear cart locally + remotely
+    setCart([]);
+    await clearCart(cartId);
+
+    // Fetch phone number of selected branch
+    const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
+    const phone = branchDoc?.data()?.phone;
+
+    if (!phone) {
+      alert('Could not find branch phone number.');
+      return;
+    }
+
+    // Format WhatsApp message
+    const messageLines = [
+      `*New Order*`,
+      `Name: ${orderData.fullName}`,
+      `Phone: +961${orderData.mobileNumber}`,
+      `Region: ${orderData.region}, Area: ${orderData.area}`,
+      `Address: ${orderData.addressDetails}`,
+      '',
+      ...orderData.cart.map((item, i) => {
+        const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
+        const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
+        const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
+        return [line, addons, removables].filter(Boolean).join('\n');
+      }),
+      '',
+      `Total: $${orderData.total.toFixed(2)}`
+    ];
+
+    const encodedMessage = encodeURIComponent(messageLines.join('\n'));
+
+    // ✅ Show thank-you screen in case redirect doesn't work
+    setOrderPlaced(true);
+    setCheckoutStep(null);
+    setCartVisible(false);
+
+    // 🔁 Redirect to WhatsApp
+    window.location.href = `https://wa.me/${phone}?text=${encodedMessage}`;
+  } catch (error) {
+    console.error('Error placing order:', error);
+    alert('Failed to place order. Please try again.');
+  }
+}}
+
+                className="px-4 py-2 text-white rounded-md hover:brightness-110 transition-colors" style={{
+                  background: 'var(--theme-primary)',
+
+                }}
+              >
+                Place Order
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

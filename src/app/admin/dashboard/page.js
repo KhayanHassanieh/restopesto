@@ -176,7 +176,7 @@ function DashboardPage() {
     // load theme colors
     setPrimaryColor(restaurant?.theme?.primaryColor || '#7b68ee');
     setBackgroundColor(restaurant?.theme?.backgroundColor || '#ffffff');
-    setAccentColor(restaurant?.theme?.accentColor || '#f76c5e');
+    setAccentColor(restaurant?.theme?.accentColor || '#9013FE');
 
     setOpenBranchId(null);
   }
