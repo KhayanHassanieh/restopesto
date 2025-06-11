@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
-import { getCart, addItemToCart, createCart, subscribeToCart } from '@/utils/cartService';
+import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -25,6 +25,7 @@ export default function RestaurantPage({ subdomain }) {
   const [shareableUrl, setShareableUrl] = useState('');
   const searchParams = useSearchParams();
   const incomingCartId = searchParams.get('cartId');
+  const [cartStatus, setCartStatus] = useState('active');
   const [checkoutStep, setCheckoutStep] = useState(null); // null, 'address', 'payment'
   const [orderData, setOrderData] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -34,88 +35,85 @@ export default function RestaurantPage({ subdomain }) {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const restaurantQuery = await getDocs(
-          query(collection(db, 'restaurants'), where('subdomain', '==', subdomain))
-        );
+  try {
+    const restaurantQuery = await getDocs(
+      query(collection(db, 'restaurants'), where('subdomain', '==', subdomain))
+    );
 
-        if (restaurantQuery.empty) throw new Error('Restaurant not found');
+    if (restaurantQuery.empty) throw new Error('Restaurant not found');
 
-        const restaurantDoc = restaurantQuery.docs[0];
-        setRestaurant({ id: restaurantDoc.id, ...restaurantDoc.data() });
+    const restaurantDoc = restaurantQuery.docs[0];
+    setRestaurant({ id: restaurantDoc.id, ...restaurantDoc.data() });
 
-        const categoriesSnapshot = await getDocs(
-          collection(db, 'restaurants', restaurantDoc.id, 'categories')
-        );
-        const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCategories(cats);
+    const categoriesSnapshot = await getDocs(
+      collection(db, 'restaurants', restaurantDoc.id, 'categories')
+    );
+    const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setCategories(cats);
 
-        const menuSnapshot = await getDocs(
-          collection(db, 'restaurants', restaurantDoc.id, 'menu')
-        );
+    const menuSnapshot = await getDocs(
+      collection(db, 'restaurants', restaurantDoc.id, 'menu')
+    );
 
-        const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
-          const addonsSnapshot = await getDocs(
-            collection(db, 'restaurants', restaurantDoc.id, 'menu', doc.id, 'addons')
-          );
-          const addons = addonsSnapshot.docs.map(addonDoc => ({
-            id: addonDoc.id,
-            ...addonDoc.data()
-          }));
+    const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
+      const addonsSnapshot = await getDocs(
+        collection(db, 'restaurants', restaurantDoc.id, 'menu', doc.id, 'addons')
+      );
+      const addons = addonsSnapshot.docs.map(addonDoc => ({
+        id: addonDoc.id,
+        ...addonDoc.data()
+      }));
 
-          return {
-            id: doc.id,
-            ...doc.data(),
-            addons
-          };
-        }));
+      return {
+        id: doc.id,
+        ...doc.data(),
+        addons
+      };
+    }));
 
-        setMenuItems(itemsWithAddons);
-        // Fetch branches
-        const branchesSnapshot = await getDocs(
-          collection(db, 'restaurants', restaurantDoc.id, 'branches')
-        );
-        const branchesData = branchesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setBranches(branchesData);
-        // In your fetchData function, after getting branches:
-        const processedBranches = branchesSnapshot.docs.map(doc => {
-          const branchData = doc.data();
-          return {
-            id: doc.id,
-            city: branchData.city,
-            // Handle both array and object formats for areas
-            areas: Array.isArray(branchData.areas)
-              ? branchData.areas
-              : Object.values(branchData.areas || {})
-          };
-        });
-        setBranches(processedBranches);
-        if (incomingCartId) {
-          setCartId(incomingCartId);
-          router.replace(`?cartId=${incomingCartId}`);
+    setMenuItems(itemsWithAddons);
 
+    const branchesSnapshot = await getDocs(
+      collection(db, 'restaurants', restaurantDoc.id, 'branches')
+    );
+    const processedBranches = branchesSnapshot.docs.map(doc => {
+      const branchData = doc.data();
+      return {
+        id: doc.id,
+        city: branchData.city,
+        areas: Array.isArray(branchData.areas)
+          ? branchData.areas
+          : Object.values(branchData.areas || {})
+      };
+    });
+    setBranches(processedBranches);
 
-          const unsubscribe = subscribeToCart(incomingCartId, (cartData) => {
-            setCart(cartData.items || []);
-          });
+    // If cartId is in URL, set it
+    if (incomingCartId) {
+      setCartId(incomingCartId);
+      router.replace(`?cartId=${incomingCartId}`);
+    }
 
-          return () => {
-            if (unsubscribe) unsubscribe();
-          };
-        }
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     if (subdomain) fetchData();
   }, [subdomain]);
+useEffect(() => {
+  if (!cartId) return;
+
+  const unsubscribe = subscribeToCart(cartId, (cartData) => {
+    setCart(cartData.items || []);
+    setCartStatus(cartData.status || 'active');
+  });
+
+  return () => unsubscribe();
+}, [cartId]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && cartId) {
@@ -158,19 +156,23 @@ export default function RestaurantPage({ subdomain }) {
     quantity = 1,
     isComboSelected = false
   ) => {
+    if (cartStatus === 'completed') return; // 🔒 Guard
     let activeCartId = cartId;
 
     if (!activeCartId) {
       activeCartId = await createCart({ restaurantId: restaurant.id });
       setCartId(activeCartId);
       router.replace(`?cartId=${activeCartId}`);
+    }
 
-
-      // ✅ Subscribe after creating the cart
+    // ✅ Always subscribe after having a valid cart ID
+    if (activeCartId) {
       subscribeToCart(activeCartId, (cartData) => {
         setCart(cartData.items || []);
       });
     }
+
+
 
     const basePrice = isComboSelected && item.comboPrice ? item.comboPrice : item.price;
     const addonsTotal = selectedAddons.reduce((sum, addon) => sum + (addon.price || 0), 0);
@@ -203,15 +205,28 @@ export default function RestaurantPage({ subdomain }) {
 
 
 
-  const updateQuantity = (itemKey, newQuantity) => {
+  const updateQuantity = async (itemKey, newQuantity) => {
+    if (cartStatus === 'completed') return; // 🔒 Guard
     if (newQuantity < 1) {
       removeFromCart(itemKey);
       return;
     }
-    setCart(prev => prev.map(item => item.customKey === itemKey ? { ...item, quantity: newQuantity } : item));
+
+    setCart(prev =>
+      prev.map(item =>
+        item.customKey === itemKey
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    );
+
+    if (cartId) {
+      await updateCartItemQuantity(cartId, itemKey, newQuantity);
+    }
   };
 
   const removeFromCart = (itemKey) => {
+    if (cartStatus === 'completed') return; // 🔒 Guard
     setCart(prev => prev.filter(item => item.customKey !== itemKey));
     removeItemFromCart(cartId, itemKey)
   };
@@ -534,21 +549,26 @@ export default function RestaurantPage({ subdomain }) {
 
 
       {/* Shopping Cart Sidebar */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-lg transform ${cartVisible ? 'translate-x-0' : 'translate-x-full'
-        } transition-transform duration-300 ease-in-out z-40`}>
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-lg transform ${cartVisible ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out z-40`}>
         <div className="p-6 h-full flex flex-col">
+          {/* ✅ Ordered Alert */}
+          {cartStatus === 'completed' && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
+              ✅ This order has already been placed. The cart is now locked.
+            </div>
+          )}
+
+          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-800">Your Order</h2>
-            <button
-              onClick={() => setCartVisible(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
+            <button onClick={() => setCartVisible(false)} className="text-gray-500 hover:text-gray-700">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
+          {/* Cart Body */}
           <div className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="text-center py-12">
@@ -567,10 +587,9 @@ export default function RestaurantPage({ subdomain }) {
                         <h3 className="font-medium text-gray-800">
                           {item.name}
                           {item.isComboSelected && (
-                            <span className="ml-2 text-sm text-orange-500 font-semibold" style={{
-                              color: 'var(--theme-primary)',
-
-                            }}>(Combo)</span>
+                            <span className="ml-2 text-sm font-semibold" style={{ color: 'var(--theme-primary)' }}>
+                              (Combo)
+                            </span>
                           )}
                         </h3>
 
@@ -600,51 +619,55 @@ export default function RestaurantPage({ subdomain }) {
                           ${item.finalTotal?.toFixed(2) || '0.00'}
                         </span>
 
-                        <div className="flex items-center mt-2">
-                          <button
-                            onClick={() => updateQuantity(item.customKey, item.quantity - 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
-                          >
-                            -
-                          </button>
-                          <span className="mx-2 w-6 text-center text-gray-800">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.customKey, item.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
-                          >
-                            +
-                          </button>
-                        </div>
+                        {/* Quantity controls */}
+                        {cartStatus !== 'completed' && (
+                          <div className="flex items-center mt-2">
+                            <button
+                              onClick={() => updateQuantity(item.customKey, item.quantity - 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                            >
+                              -
+                            </button>
+                            <span className="mx-2 w-6 text-center text-gray-800">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.customKey, item.quantity + 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
                       </div>
-
                     </div>
-                    <button
-                      onClick={() => removeFromCart(item.customKey)}
-                      className="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center"
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Remove
-                    </button>
+
+                    {/* Remove button */}
+                    {cartStatus !== 'completed' && (
+                      <button
+                        onClick={() => removeFromCart(item.customKey)}
+                        className="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
+          {/* Footer: Share + Totals + Checkout */}
           {cart.length > 0 && (
             <div className="border-t border-gray-200 pt-4">
               <button
                 onClick={() => {
                   const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
-
-
-                  router.replace(`?cartId=${cartId}`); // 👈 update the browser URL now
+                  router.replace(`?cartId=${cartId}`);
                   navigator.clipboard.writeText(urlWithCart);
                   alert('Cart link copied!');
                 }}
-
                 className="text-sm text-blue-600 underline mt-2"
               >
                 Share this cart
@@ -662,11 +685,15 @@ export default function RestaurantPage({ subdomain }) {
                 <span className="text-gray-800">Total:</span>
                 <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
               </div>
+
+              {/* ✅ Disable checkout if ordered */}
               <button
                 onClick={() => setCheckoutStep('address')}
-                className="w-full hover:brightness-110 text-white py-3 px-4 rounded-lg font-medium transition-colors" style={{
-                  background: 'var(--theme-primary)',
-
+                disabled={cartStatus === 'completed'}
+                className={`w-full text-white py-3 px-4 rounded-lg font-medium transition-colors ${cartStatus === 'completed' ? 'bg-gray-400 cursor-not-allowed' : ''
+                  }`}
+                style={{
+                  background: cartStatus === 'completed' ? undefined : 'var(--theme-primary)',
                 }}
               >
                 Proceed to Checkout
@@ -676,8 +703,9 @@ export default function RestaurantPage({ subdomain }) {
         </div>
       </div>
 
+
       {/* Cart Floating Button */}
-      {cart.length > 0 && (
+      {cart.length > 0 && cartStatus !== 'completed' && (
         <button
           onClick={() => setCartVisible(true)}
           className="fixed bottom-6 right-6 hover:brightness-105 text-white p-4 rounded-full shadow-lg z-10 flex items-center"
@@ -759,7 +787,7 @@ export default function RestaurantPage({ subdomain }) {
                     // Clear cart locally + remotely
                     setCart([]);
                     await clearCart(cartId);
-
+                    await updateDoc(doc(db, 'carts', cartId), { status: 'completed' });
                     // Fetch phone number of selected branch
                     const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
                     const phone = branchDoc?.data()?.phone;
@@ -788,6 +816,16 @@ export default function RestaurantPage({ subdomain }) {
                     ];
 
                     const encodedMessage = encodeURIComponent(messageLines.join('\n'));
+                    {
+                      orderPlaced && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
+                          <div className="text-center">
+                            <h2 className="text-2xl font-bold mb-2 text-green-700">✅ Order Sent!</h2>
+                            <p className="text-gray-700">You’ll be redirected to WhatsApp shortly.</p>
+                          </div>
+                        </div>
+                      )
+                    }
 
                     // ✅ Show thank-you screen in case redirect doesn't work
                     setOrderPlaced(true);

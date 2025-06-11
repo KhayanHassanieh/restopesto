@@ -40,11 +40,37 @@ export const addItemToCart = async (cartId, item) => {
 export const subscribeToCart = (cartId, onUpdate) => {
   const cartRef = doc(db, 'carts', cartId);
   return onSnapshot(cartRef, (docSnap) => {
-    if (docSnap.exists()) {
-      onUpdate({ id: docSnap.id, ...docSnap.data() });
-    }
+    const data = docSnap.data();
+    onUpdate({
+      items: data?.items || [],
+      status: data?.status || 'active'
+    });
   });
 };
+
+
+export async function updateCartItemQuantity(cartId, itemKey, newQuantity) {
+  const cartRef = doc(db, 'carts', cartId);
+  const cartSnap = await getDoc(cartRef);
+  if (!cartSnap.exists()) return;
+
+  const cartData = cartSnap.data();
+  const updatedItems = (cartData.items || []).map(item => {
+    if (item.customKey !== itemKey) return item;
+
+    const basePrice = item.basePrice || 0;
+    const addonsTotal = item.addonsTotal || 0;
+
+    return {
+      ...item,
+      quantity: newQuantity,
+      finalTotal: (basePrice + addonsTotal) * newQuantity,
+    };
+  });
+
+  await updateDoc(cartRef, { items: updatedItems });
+}
+
 
 // ❌ Remove item from cart by customKey
 export const removeItemFromCart = async (cartId, itemKey) => {
