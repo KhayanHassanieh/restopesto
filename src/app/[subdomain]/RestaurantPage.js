@@ -104,16 +104,6 @@ export default function RestaurantPage({ subdomain }) {
 
     if (subdomain) fetchData();
   }, [subdomain]);
-useEffect(() => {
-  if (!cartId) return;
-
-  const unsubscribe = subscribeToCart(cartId, (cartData) => {
-    setCart(cartData.items || []);
-    setCartStatus(cartData.status || 'active');
-  });
-
-  return () => unsubscribe();
-}, [cartId]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && cartId) {
