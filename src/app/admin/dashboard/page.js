@@ -232,7 +232,7 @@ function DashboardPage() {
         logoUrl = await getDownloadURL(logoRef);
       }
   
-      // 1. Update restaurant document
+      // 1. Update restaurant doc
       await updateDoc(doc(db, 'restaurants', editMode), {
         name: updatedData.name || editName,
         subdomain: updatedData.subdomain || editSubdomain,
@@ -247,7 +247,7 @@ function DashboardPage() {
         }
       });
   
-      // 2. Update related restaurant user in Firestore
+      // 2. Update related restaurant user (Firestore + Auth via Cloud Function)
       const userSnap = await getDocs(
         query(collection(db, 'restaurantUsers'), where('restaurantId', '==', editMode))
       );
@@ -255,24 +255,39 @@ function DashboardPage() {
       if (!userSnap.empty) {
         const userDoc = userSnap.docs[0];
         const currentEmail = userDoc.data().email;
+        const uid = userDoc.data().uid;
+  
         const newEmail = updatedData.username?.includes('@')
           ? updatedData.username
           : `${updatedData.username}@krave.me`;
   
-        if (newEmail && newEmail !== currentEmail) {
-          // Update email in Firestore (not Auth)
-          await updateDoc(doc(db, 'restaurantUsers', userDoc.id), {
-            email: newEmail,
-            updatedAt: new Date()
+        const emailChanged = newEmail && newEmail !== currentEmail;
+        const passwordChanged = updatedData.password && updatedData.password.length > 0;
+  
+        if (emailChanged || passwordChanged) {
+          // Update Firestore email field if needed
+          if (emailChanged) {
+            await updateDoc(doc(db, 'restaurantUsers', userDoc.id), {
+              email: newEmail,
+              updatedAt: new Date()
+            });
+          }
+  
+          // Call Cloud Function to update Firebase Auth user
+          const userToken = await auth.currentUser.getIdToken();
+          await fetch("https://us-central1-restopesto-a4825.cloudfunctions.net/updateRestaurantUser", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userToken}`
+            },
+            body: JSON.stringify({
+              uid,
+              ...(emailChanged && { newEmail }),
+              ...(passwordChanged && { newPassword: updatedData.password })
+            })
           });
-  
-          // Optionally: trigger email update via Cloud Function on backend
-        }
-  
-        if (updatedData.password) {
-          // 🔒 You *cannot* change another user’s password on the client side
-          // Do this via Cloud Function with admin privileges
-          console.warn('To change password, call a secure backend function.');
+          toast.success('User credentials updated successfully!');
         }
       }
   
@@ -282,7 +297,8 @@ function DashboardPage() {
       console.error('Update failed:', err);
       setMessage({ text: `Update failed: ${err.message}`, type: 'error' });
     }
-  };  
+  };
+  
 
   const handleToggleBranches = async (id) => {
     const newId = openBranchId === id ? null : id;
