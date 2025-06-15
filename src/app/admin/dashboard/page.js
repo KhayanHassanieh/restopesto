@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc, addDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
+import { toast } from 'react-hot-toast';
+
+import { doc, updateDoc, addDoc, collection, getDocs, Timestamp,  query,
+  where } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import RestaurantCard from '@/components/RestaurantCard';
 import withAuth from '@/components/WithAuth';
@@ -31,6 +34,8 @@ function DashboardPage() {
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#7b68ee');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
@@ -187,7 +192,7 @@ function DashboardPage() {
     }
   };
 
-  const toggleEdit = (restaurant) => {
+  const toggleEdit = async (restaurant) => {
     if (editMode === restaurant.id) {
       setEditMode(null);
     } else {
@@ -195,7 +200,7 @@ function DashboardPage() {
       setEditName(restaurant.name);
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
-
+  
       let dateValue = '';
       if (restaurant.expiresAt) {
         const date = restaurant.expiresAt.toDate
@@ -204,15 +209,31 @@ function DashboardPage() {
         dateValue = date.toISOString().split('T')[0];
       }
       setEditExpiresAt(dateValue);
-
-      // load theme colors
+  
       setPrimaryColor(restaurant?.theme?.primaryColor || '#7b68ee');
       setBackgroundColor(restaurant?.theme?.backgroundColor || '#ffffff');
       setAccentColor(restaurant?.theme?.accentColor || '#9013FE');
-
+  
+      // 🔍 Fetch current user credentials
+      try {
+        const userSnap = await getDocs(
+          query(collection(db, 'restaurantUsers'), where('restaurantId', '==', restaurant.id))
+        );
+        if (!userSnap.empty) {
+          const userDoc = userSnap.docs[0];
+          setEditUsername(userDoc.data().email || '');
+        } else {
+          setEditUsername('');
+        }
+      } catch (err) {
+        console.error('Failed to fetch restaurant user:', err);
+      }
+  
+      setEditPassword('');
       setOpenBranchId(null);
     }
   };
+  
 
 
   const handleUpdateRestaurant = async (updatedData) => {
@@ -275,11 +296,11 @@ function DashboardPage() {
   
           // Call Cloud Function to update Firebase Auth user
           const userToken = await auth.currentUser.getIdToken();
-          await fetch("https://us-central1-restopesto-a4825.cloudfunctions.net/updateRestaurantUser", {
+          await fetch("https://updaterestaurantuser-zsgpdxuheq-uc.a.run.app", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${userToken}`
+              Authorization: `Bearer ${userToken}` // very important!
             },
             body: JSON.stringify({
               uid,
@@ -287,6 +308,7 @@ function DashboardPage() {
               ...(passwordChanged && { newPassword: updatedData.password })
             })
           });
+          console.log(userToken);
           toast.success('User credentials updated successfully!');
         }
       }
@@ -675,6 +697,8 @@ function DashboardPage() {
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
                       expiresAt: setEditExpiresAt,
+                      username: setEditUsername,
+                      password: setEditPassword
                     }}
                     onUpdate={handleUpdateRestaurant}
                     onToggleActive={handleToggleActive}
@@ -685,8 +709,8 @@ function DashboardPage() {
                     setBackgroundColor={setBackgroundColor}
                     accentColor={accentColor}
                     setAccentColor={setAccentColor}
-
-
+                    editUsername={editUsername}
+                    editPassword={editPassword}
                   />
                 </div>
               ))
