@@ -26,7 +26,7 @@ export default function RestaurantPage({ subdomain }) {
   const searchParams = useSearchParams();
   const incomingCartId = searchParams.get('cartId');
   const [cartStatus, setCartStatus] = useState('active');
-  const [checkoutStep, setCheckoutStep] = useState(null); // null, 'address', 'payment'
+  const [checkoutStep, setCheckoutStep] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -35,90 +35,93 @@ export default function RestaurantPage({ subdomain }) {
 
   useEffect(() => {
     const fetchData = async () => {
-  try {
-    const restaurantQuery = await getDocs(
-      query(collection(db, 'restaurants'), where('subdomain', '==', subdomain))
-    );
+      try {
+        const restaurantQuery = await getDocs(
+          query(collection(db, 'restaurants'), where('subdomain', '==', subdomain))
+        );
 
-    if (restaurantQuery.empty) throw new Error('Restaurant not found');
+        if (restaurantQuery.empty) throw new Error('Restaurant not found');
 
-    const restaurantDoc = restaurantQuery.docs[0];
-    setRestaurant({ id: restaurantDoc.id, ...restaurantDoc.data() });
+        const restaurantDoc = restaurantQuery.docs[0];
+        const restaurantId = restaurantDoc.id;
+        setRestaurant({ id: restaurantId, ...restaurantDoc.data() });
 
-    const categoriesSnapshot = await getDocs(
-      collection(db, 'restaurants', restaurantDoc.id, 'categories')
-    );
-    const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setCategories(cats);
+        const categoriesSnapshot = await getDocs(
+          collection(db, 'restaurants', restaurantId, 'categories')
+        );
+        const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setCategories(cats);
 
-    const menuSnapshot = await getDocs(
-      collection(db, 'restaurants', restaurantDoc.id, 'menu')
-    );
+        const menuSnapshot = await getDocs(
+          collection(db, 'restaurants', restaurantId, 'menu')
+        );
 
-    const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
-      const addonsSnapshot = await getDocs(
-        collection(db, 'restaurants', restaurantDoc.id, 'menu', doc.id, 'addons')
-      );
-      const addons = addonsSnapshot.docs.map(addonDoc => ({
-        id: addonDoc.id,
-        ...addonDoc.data()
-      }));
+        const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
+          const addonsSnapshot = await getDocs(
+            collection(db, 'restaurants', restaurantId, 'menu', doc.id, 'addons')
+          );
+          const addons = addonsSnapshot.docs.map(addonDoc => ({
+            id: addonDoc.id,
+            ...addonDoc.data()
+          }));
 
-      return {
-        id: doc.id,
-        ...doc.data(),
-        addons
-      };
-    }));
+          return {
+            id: doc.id,
+            ...doc.data(),
+            addons
+          };
+        }));
 
-    setMenuItems(itemsWithAddons);
+        setMenuItems(itemsWithAddons);
 
-    const branchesSnapshot = await getDocs(
-      collection(db, 'restaurants', restaurantDoc.id, 'branches')
-    );
-    const processedBranches = branchesSnapshot.docs.map(doc => {
-      const branchData = doc.data();
-      return {
-        id: doc.id,
-        city: branchData.city,
-        areas: Array.isArray(branchData.areas)
-          ? branchData.areas
-          : Object.values(branchData.areas || {})
-      };
-    });
-    setBranches(processedBranches);
+        const branchesSnapshot = await getDocs(
+          collection(db, 'restaurants', restaurantId, 'branches')
+        );
+        const processedBranches = branchesSnapshot.docs.map(doc => {
+          const branchData = doc.data();
+          return {
+            id: doc.id,
+            city: branchData.city,
+            areas: Array.isArray(branchData.areas)
+              ? branchData.areas
+              : Object.values(branchData.areas || {})
+          };
+        });
+        setBranches(processedBranches);
 
-    // If cartId is in URL, set it
-    if (incomingCartId) {
-  setCartId(incomingCartId);
-  router.replace(`?cartId=${incomingCartId}`);
-
-   const unsubscribe = subscribeToCart(cartId, (cartData) => {
-    setCart(cartData.items || []);
-    setCartStatus(cartData.status || 'active');
-  });
-
-  // Optional: clean up if needed
-  return () => unsubscribe();
-}
-
-
-  } catch (error) {
-    console.error('Error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+        let resolvedCartId = incomingCartId;
+        if (!incomingCartId) {
+          resolvedCartId = await createCart({ restaurantId });
+          router.replace(`?cartId=${resolvedCartId}`);
+        }
+        setCartId(resolvedCartId);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     if (subdomain) fetchData();
   }, [subdomain]);
 
   useEffect(() => {
-  if (typeof window !== 'undefined' && cartId) {
-    setShareableUrl(`${window.location.origin}?cartId=${cartId}`);
-  }
-}, [cartId, subdomain]);
+    if (!cartId) return;
+
+    const unsubscribe = subscribeToCart(cartId, (cartData) => {
+      setCart(cartData.items || []);
+      setCartStatus(cartData.status || 'active');
+    });
+
+    return () => unsubscribe();
+  }, [cartId]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && cartId) {
+      setShareableUrl(`${window.location.origin}?cartId=${cartId}`);
+    }
+  }, [cartId]);
+
 
 
   useEffect(() => {
