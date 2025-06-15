@@ -90,9 +90,18 @@ export default function RestaurantPage({ subdomain }) {
 
     // If cartId is in URL, set it
     if (incomingCartId) {
-      setCartId(incomingCartId);
-      router.replace(`?cartId=${incomingCartId}`);
-    }
+  setCartId(incomingCartId);
+  router.replace(`?cartId=${incomingCartId}`);
+
+   const unsubscribe = subscribeToCart(cartId, (cartData) => {
+    setCart(cartData.items || []);
+    setCartStatus(cartData.status || 'active');
+  });
+
+  // Optional: clean up if needed
+  return () => unsubscribe();
+}
+
 
   } catch (error) {
     console.error('Error:', error);
@@ -106,11 +115,11 @@ export default function RestaurantPage({ subdomain }) {
   }, [subdomain]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && cartId) {
-      setShareableUrl(`${window.location.origin}?cartId=${cartId}`);
+  if (typeof window !== 'undefined' && cartId) {
+    setShareableUrl(`${window.location.origin}?cartId=${cartId}`);
+  }
+}, [cartId, subdomain]);
 
-    }
-  }, [cartId, subdomain]);
 
   useEffect(() => {
     if (selectedItem) {
