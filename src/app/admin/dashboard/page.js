@@ -2,9 +2,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/firebase/firebaseConfig';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc, addDoc, collection, getDocs, Timestamp } from 'firebase/firestore';
+import { toast } from 'react-hot-toast';
+
+import { doc, updateDoc, addDoc, collection, getDocs, Timestamp,  query,
+  where } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import RestaurantCard from '@/components/RestaurantCard';
 import withAuth from '@/components/WithAuth';
@@ -29,6 +32,11 @@ function DashboardPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#7b68ee');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
   const [accentColor, setAccentColor] = useState('#f76c5e');
@@ -99,12 +107,19 @@ function DashboardPage() {
     e.preventDefault();
     setMessage({ text: '', type: '' });
 
-    if (!name || !subdomain || !phone) {
+    if (!name || !subdomain || !phone || !username || !password) {
       setMessage({ text: 'Please fill all required fields', type: 'error' });
       return;
     }
-
+    setSubmitting(true);
     try {
+      const email = username.includes('@') ? username : `${username}@krave.me`;
+
+      // 1. Try creating the user FIRST
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Handle image uploads
       let uploadedLogoUrl = '';
       let uploadedBgUrl = '';
 
@@ -115,6 +130,7 @@ function DashboardPage() {
         uploadedBgUrl = await getDownloadURL(bgStorageRef);
       }
 
+      // 3. Create restaurant doc
       const restaurantData = {
         name,
         subdomain,
@@ -125,26 +141,47 @@ function DashboardPage() {
         logoUrl: uploadedLogoUrl,
         backgroundImageUrl: uploadedBgUrl,
         theme: {
-          primaryColor: primaryColor,
-          backgroundColor: backgroundColor,
-          accentColor: accentColor
+          primaryColor,
+          backgroundColor,
+          accentColor
         }
       };
 
-      await addDoc(collection(db, 'restaurants'), restaurantData);
-      setMessage({ text: 'Restaurant added successfully!', type: 'success' });
+      const docRef = await addDoc(collection(db, 'restaurants'), restaurantData);
+      const restaurantId = docRef.id;
+
+      // 4. Save user link
+      await addDoc(collection(db, 'restaurantUsers'), {
+        uid: user.uid,
+        restaurantId,
+        email,
+        createdAt: new Date()
+      });
+
+      // 5. Clear form
+      setMessage({ text: 'Restaurant and user added successfully!', type: 'success' });
       setName('');
       setSubdomain('');
       setPhone('');
+      setUsername('');
+      setPassword('');
       setLogoFile(null);
       setBackgroundImageFile(null);
       setIsAdding(false);
       fetchRestaurants();
+      setSubmitting(true);
     } catch (err) {
-      console.error('Error adding restaurant:', err);
-      setMessage({ text: `Error: ${err.message}`, type: 'error' });
+      setSubmitting(true);
+      if (err.code === 'auth/email-already-in-use') {
+        setMessage({ text: 'This username is already taken. Choose another one.', type: 'error' });
+      } else {
+        console.error('Error adding restaurant:', err);
+        setMessage({ text: `Error: ${err.message}`, type: 'error' });
+        setSubmitting(true);
+      }
     }
   };
+
 
   const handleToggleActive = async (id, currentValue) => {
     try {
@@ -155,68 +192,135 @@ function DashboardPage() {
     }
   };
 
- const toggleEdit = (restaurant) => {
-  if (editMode === restaurant.id) {
-    setEditMode(null);
-  } else {
-    setEditMode(restaurant.id);
-    setEditName(restaurant.name);
-    setEditSubdomain(restaurant.subdomain);
-    setEditPhone(restaurant.phone);
-
-    let dateValue = '';
-    if (restaurant.expiresAt) {
-      const date = restaurant.expiresAt.toDate
-        ? restaurant.expiresAt.toDate()
-        : new Date(restaurant.expiresAt);
-      dateValue = date.toISOString().split('T')[0];
+  const toggleEdit = async (restaurant) => {
+    if (editMode === restaurant.id) {
+      setEditMode(null);
+    } else {
+      setEditMode(restaurant.id);
+      setEditName(restaurant.name);
+      setEditSubdomain(restaurant.subdomain);
+      setEditPhone(restaurant.phone);
+  
+      let dateValue = '';
+      if (restaurant.expiresAt) {
+        const date = restaurant.expiresAt.toDate
+          ? restaurant.expiresAt.toDate()
+          : new Date(restaurant.expiresAt);
+        dateValue = date.toISOString().split('T')[0];
+      }
+      setEditExpiresAt(dateValue);
+  
+      setPrimaryColor(restaurant?.theme?.primaryColor || '#7b68ee');
+      setBackgroundColor(restaurant?.theme?.backgroundColor || '#ffffff');
+      setAccentColor(restaurant?.theme?.accentColor || '#9013FE');
+  
+      // 🔍 Fetch current user credentials
+      try {
+        const userSnap = await getDocs(
+          query(collection(db, 'restaurantUsers'), where('restaurantId', '==', restaurant.id))
+        );
+        if (!userSnap.empty) {
+          const userDoc = userSnap.docs[0];
+          setEditUsername(userDoc.data().email || '');
+        } else {
+          setEditUsername('');
+        }
+      } catch (err) {
+        console.error('Failed to fetch restaurant user:', err);
+      }
+  
+      setEditPassword('');
+      setOpenBranchId(null);
     }
-    setEditExpiresAt(dateValue);
-
-    // load theme colors
-    setPrimaryColor(restaurant?.theme?.primaryColor || '#7b68ee');
-    setBackgroundColor(restaurant?.theme?.backgroundColor || '#ffffff');
-    setAccentColor(restaurant?.theme?.accentColor || '#9013FE');
-
-    setOpenBranchId(null);
-  }
-};
+  };
+  
 
 
   const handleUpdateRestaurant = async (updatedData) => {
     try {
       let bgImageUrl = restaurants.find(r => r.id === editMode)?.backgroundImageUrl || '';
       let logoUrl = restaurants.find(r => r.id === editMode)?.logoUrl || '';
+  
       if (updatedData.backgroundImageFile) {
         const bgStorageRef = ref(storage, `restaurant_backgrounds/${updatedData.backgroundImageFile.name}`);
         await uploadBytes(bgStorageRef, updatedData.backgroundImageFile);
         bgImageUrl = await getDownloadURL(bgStorageRef);
-
       }
+  
       if (updatedData.logoFile) {
         const logoRef = ref(storage, `restaurant_logos/${updatedData.logoFile.name}`);
         await uploadBytes(logoRef, updatedData.logoFile);
         logoUrl = await getDownloadURL(logoRef);
       }
+  
+      // 1. Update restaurant doc
       await updateDoc(doc(db, 'restaurants', editMode), {
-  name: updatedData.name || editName,
-  subdomain: updatedData.subdomain || editSubdomain,
-  phone: updatedData.phone || editPhone,
-  expiresAt: Timestamp.fromDate(new Date(updatedData.expiresAt || editExpiresAt)),
-  ...(bgImageUrl && { backgroundImageUrl: bgImageUrl }),
-  ...(logoUrl && { logoUrl }),
-  theme: {
-    primaryColor,
-    backgroundColor,
-    accentColor,
-  }
-});
+        name: updatedData.name || editName,
+        subdomain: updatedData.subdomain || editSubdomain,
+        phone: updatedData.phone || editPhone,
+        expiresAt: Timestamp.fromDate(new Date(updatedData.expiresAt || editExpiresAt)),
+        ...(bgImageUrl && { backgroundImageUrl: bgImageUrl }),
+        ...(logoUrl && { logoUrl }),
+        theme: {
+          primaryColor,
+          backgroundColor,
+          accentColor,
+        }
+      });
+  
+      // 2. Update related restaurant user (Firestore + Auth via Cloud Function)
+      const userSnap = await getDocs(
+        query(collection(db, 'restaurantUsers'), where('restaurantId', '==', editMode))
+      );
+  
+      if (!userSnap.empty) {
+        const userDoc = userSnap.docs[0];
+        const currentEmail = userDoc.data().email;
+        const uid = userDoc.data().uid;
+  
+        const newEmail = updatedData.username?.includes('@')
+          ? updatedData.username
+          : `${updatedData.username}@krave.me`;
+  
+        const emailChanged = newEmail && newEmail !== currentEmail;
+        const passwordChanged = updatedData.password && updatedData.password.length > 0;
+  
+        if (emailChanged || passwordChanged) {
+          // Update Firestore email field if needed
+          if (emailChanged) {
+            await updateDoc(doc(db, 'restaurantUsers', userDoc.id), {
+              email: newEmail,
+              updatedAt: new Date()
+            });
+          }
+  
+          // Call Cloud Function to update Firebase Auth user
+          const userToken = await auth.currentUser.getIdToken();
+          await fetch("https://updaterestaurantuser-zsgpdxuheq-uc.a.run.app", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${userToken}` // very important!
+            },
+            body: JSON.stringify({
+              uid,
+              ...(emailChanged && { newEmail }),
+              ...(passwordChanged && { newPassword: updatedData.password })
+            })
+          });
+          console.log(userToken);
+          toast.success('User credentials updated successfully!');
+        }
+      }
+  
       setEditMode(null);
       fetchRestaurants();
     } catch (err) {
       console.error('Update failed:', err);
+      setMessage({ text: `Update failed: ${err.message}`, type: 'error' });
     }
   };
+  
 
   const handleToggleBranches = async (id) => {
     const newId = openBranchId === id ? null : id;
@@ -381,6 +485,36 @@ function DashboardPage() {
                     placeholder="+1234567890"
                   />
                 </div>
+                <div className="sm:col-span-3">
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                    Username <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+                    placeholder="owner@example.com"
+                  />
+                </div>
+
+                <div className="sm:col-span-3">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+                    placeholder="••••••••"
+                  />
+                </div>
+
                 {/* Primary Color */}
                 <div className="sm:col-span-2 relative">
                   <label className="block text-sm font-medium text-gray-700">Primary Color</label>
@@ -486,6 +620,7 @@ function DashboardPage() {
                 </button>
                 <button
                   type="submit"
+                  disabled={submitting}
                   className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
                 >
                   Add Restaurant
@@ -562,6 +697,8 @@ function DashboardPage() {
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
                       expiresAt: setEditExpiresAt,
+                      username: setEditUsername,
+                      password: setEditPassword
                     }}
                     onUpdate={handleUpdateRestaurant}
                     onToggleActive={handleToggleActive}
@@ -572,8 +709,8 @@ function DashboardPage() {
                     setBackgroundColor={setBackgroundColor}
                     accentColor={accentColor}
                     setAccentColor={setAccentColor}
-
-
+                    editUsername={editUsername}
+                    editPassword={editPassword}
                   />
                 </div>
               ))

@@ -13,6 +13,8 @@ export default function RestaurantCard({
   editPhone,
   editExpiresAt,
   onToggleBranches,
+  editUsername,
+  editPassword,
   onToggleEdit,
   onEditChange,
   onUpdate,
@@ -45,6 +47,8 @@ export default function RestaurantCard({
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
+      ...(editUsername && { username: editUsername }),
+      ...(editPassword && { password: editPassword }),
       backgroundImageFile: editBackgroundImageFile,
       logoFile: editLogoFile,
       theme: {
@@ -56,17 +60,17 @@ export default function RestaurantCard({
 
   };
   const [showPicker, setShowPicker] = useState({
-  primary: false,
-  background: false,
-  accent: false,
-});
+    primary: false,
+    background: false,
+    accent: false,
+  });
 
-const togglePicker = (key) => {
-  setShowPicker((prev) => ({
-    ...prev,
-    [key]: !prev[key],
-  }));
-}
+  const togglePicker = (key) => {
+    setShowPicker((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  }
   const formatExpirationDate = (expiresAt) => {
     if (!expiresAt) return 'Not set';
 
@@ -320,6 +324,30 @@ const togglePicker = (key) => {
               </p>
             </div>
             <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">User Email / Username</label>
+              <input
+                id="username"
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                placeholder="user@example.com or username"
+                value={editUsername}
+                onChange={(e) => onEditChange.username(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">New Password (optional)</label>
+              <input
+                id="password"
+                type="password"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                placeholder="••••••••"
+                value={editPassword}
+                onChange={(e) => onEditChange.password(e.target.value)}
+              />
+            </div>
+
+            <div>
               <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700">Expiration Date</label>
               <input
                 id="expiresAt"
@@ -330,92 +358,92 @@ const togglePicker = (key) => {
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
-           {/* Theme Colors */}
-<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-  {/* Primary Color */}
-  <div className="relative">
-    <label className="block text-sm font-medium text-gray-700">Primary Color</label>
-    <div className="flex items-center space-x-2 mt-1">
-      <input
-        type="text"
-        value={primaryColor}
-        onChange={(e) => setPrimaryColor(e.target.value)}
-        onClick={() => togglePicker('primary')}
-        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
-      />
-      <div
-        className="w-6 h-6 rounded border cursor-pointer"
-        style={{ backgroundColor: primaryColor }}
-        onClick={() => togglePicker('primary')}
-      />
-    </div>
-    {showPicker.primary && (
-      <div className="mt-2 z-10">
-        <SketchPicker
-          color={primaryColor}
-          className=' text-gray-800'
-          onChangeComplete={(color) => setPrimaryColor(color.hex)}
-        />
-      </div>
-    )}
-  </div>
+            {/* Theme Colors */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Primary Color */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700">Primary Color</label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    onClick={() => togglePicker('primary')}
+                    className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                  />
+                  <div
+                    className="w-6 h-6 rounded border cursor-pointer"
+                    style={{ backgroundColor: primaryColor }}
+                    onClick={() => togglePicker('primary')}
+                  />
+                </div>
+                {showPicker.primary && (
+                  <div className="mt-2 z-10">
+                    <SketchPicker
+                      color={primaryColor}
+                      className=' text-gray-800'
+                      onChangeComplete={(color) => setPrimaryColor(color.hex)}
+                    />
+                  </div>
+                )}
+              </div>
 
-  {/* Background Color */}
-  <div className="relative">
-    <label className="block text-sm font-medium text-gray-700">Background Color</label>
-    <div className="flex items-center space-x-2 mt-1">
-      <input
-        type="text"
-        value={backgroundColor}
-        onChange={(e) => setBackgroundColor(e.target.value)}
-        onClick={() => togglePicker('background')}
-        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800"
-      />
-      <div
-        className="w-6 h-6 rounded border cursor-pointer"
-        style={{ backgroundColor: backgroundColor }}
-        onClick={() => togglePicker('background')}
-      />
-    </div>
-    {showPicker.background && (
-      <div className="mt-2 z-10">
-        <SketchPicker
-          className=' text-gray-800'
-          color={backgroundColor}
-          onChangeComplete={(color) => setBackgroundColor(color.hex)}
-        />
-      </div>
-    )}
-  </div>
+              {/* Background Color */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700">Background Color</label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <input
+                    type="text"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    onClick={() => togglePicker('background')}
+                    className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800"
+                  />
+                  <div
+                    className="w-6 h-6 rounded border cursor-pointer"
+                    style={{ backgroundColor: backgroundColor }}
+                    onClick={() => togglePicker('background')}
+                  />
+                </div>
+                {showPicker.background && (
+                  <div className="mt-2 z-10">
+                    <SketchPicker
+                      className=' text-gray-800'
+                      color={backgroundColor}
+                      onChangeComplete={(color) => setBackgroundColor(color.hex)}
+                    />
+                  </div>
+                )}
+              </div>
 
-  {/* Accent Color */}
-  <div className="relative">
-    <label className="block text-sm font-medium text-gray-700">Accent Color</label>
-    <div className="flex items-center space-x-2 mt-1">
-      <input
-        type="text"
-        value={accentColor}
-        onChange={(e) => setAccentColor(e.target.value)}
-        onClick={() => togglePicker('accent')}
-        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
-      />
-      <div
-        className="w-6 h-6 rounded border cursor-pointer"
-        style={{ backgroundColor: accentColor }}
-        onClick={() => togglePicker('accent')}
-      />
-    </div>
-    {showPicker.accent && (
-      <div className="mt-2 z-10">
-        <SketchPicker
-          className=' text-gray-800'
-          color={accentColor}
-          onChangeComplete={(color) => setAccentColor(color.hex)}
-        />
-      </div>
-    )}
-  </div>
-</div>
+              {/* Accent Color */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700">Accent Color</label>
+                <div className="flex items-center space-x-2 mt-1">
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    onClick={() => togglePicker('accent')}
+                    className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                  />
+                  <div
+                    className="w-6 h-6 rounded border cursor-pointer"
+                    style={{ backgroundColor: accentColor }}
+                    onClick={() => togglePicker('accent')}
+                  />
+                </div>
+                {showPicker.accent && (
+                  <div className="mt-2 z-10">
+                    <SketchPicker
+                      className=' text-gray-800'
+                      color={accentColor}
+                      onChangeComplete={(color) => setAccentColor(color.hex)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
 
 
             <div className="flex justify-end space-x-3">
