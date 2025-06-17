@@ -29,7 +29,7 @@ export default function Home() {
   {/* Main Hero Content */}
   <div className="max-w-4xl mx-auto relative z-10">
     <h1 className="text-5xl md:text-6xl font-bold mb-6">
-      <span className="text-[#ffd200]">Transform</span> Your Restaurant's Ordering
+      <span className="text-[#ffd200]">Transform</span> Your Restaurant&apos;s Ordering
     </h1>
     <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
       Smart QR menus with real-time analytics and seamless customer experience
@@ -72,7 +72,7 @@ export default function Home() {
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-4">Smart Ordering Solutions</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Everything you need to modernize your restaurant's ordering experience
+                Everything you need to modernize your restaurant&apos;s ordering experience
               </p>
             </div>
             
@@ -117,7 +117,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Custom Branding</h3>
                 <p className="text-gray-600">
-                  Match your restaurant's aesthetic with custom colors, fonts, and layout options.
+                  Match your restaurant&apos;s aesthetic with custom colors, fonts, and layout options.
                 </p>
               </div>
               
@@ -302,7 +302,7 @@ export default function Home() {
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-4">What Our Customers Say</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Don't just take our word for it
+                Don&apos;t just take our word for it
               </p>
             </div>
             
@@ -315,7 +315,7 @@ export default function Home() {
                     ))}
                   </div>
                   <p className="text-gray-600 mb-6">
-                    "Krave Menus transformed our restaurant's ordering process. Our customers love the convenience, and we've seen a 30% increase in average order value since implementing their solution."
+                    "Krave Menus transformed our restaurant&apos;s ordering process. Our customers love the convenience, and we&apos;ve seen a 30% increase in average order value since implementing their solution."
                   </p>
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full bg-gray-300 mr-4"></div>
@@ -341,7 +341,7 @@ export default function Home() {
               href="#pricing" 
               className="bg-[#333333] hover:bg-gray-800 text-[#f3f3f3] px-10 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 inline-block"
             >
-              Get Started - It's Free for 14 Days
+              Get Started - It&apos;s Free for 14 Days
             </a>
           </div>
         </section>
