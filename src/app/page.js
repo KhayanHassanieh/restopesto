@@ -315,7 +315,7 @@ export default function Home() {
                     ))}
                   </div>
                   <p className="text-gray-600 mb-6">
-                    "Krave Menus transformed our restaurant&apos;s ordering process. Our customers love the convenience, and we&apos;ve seen a 30% increase in average order value since implementing their solution."
+                    &quot;Krave Menus transformed our restaurant&apos;s ordering process. Our customers love the convenience, and we&apos;ve seen a 30% increase in average order value since implementing their solution.&quot;
                   </p>
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full bg-gray-300 mr-4"></div>
