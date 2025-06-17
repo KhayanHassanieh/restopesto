@@ -33,3 +33,62 @@ body {
     min-height: 220px; /* for desktop */
   }
 }
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+@tailwind utilities;
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Custom button hover effect */
+.btn-hover-effect {
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-hover-effect:hover {
+  transform: translateY(-3px);
+}
+
+/* Pulse animation for CTA */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 210, 0, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 210, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 210, 0, 0); }
+}
+
+.animate-pulse-cta {
+  animation: pulse 2s infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
