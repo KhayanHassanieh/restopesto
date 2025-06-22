@@ -39,7 +39,7 @@ export default function DashboardPage() {
         try {
             // Get subdomain from URL path
             const pathParts = window.location.pathname.split('/');
-            const subdomain = pathParts[1]; // Adjust index based on your URL structure
+            const subdomain = pathParts[0]; // Adjust index based on your URL structure
 
             // Fetch restaurant document
             const q = query(
