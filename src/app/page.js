@@ -359,7 +359,7 @@ export default function Home() {
       href="#pricing"
       className="bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-lg text-lg font-bold shadow-lg transition-all"
     >
-      Get Started – It's Free for 14 Days
+      Get Started – It&apos;s Free for 14 Days
     </a>
   </div>
 
