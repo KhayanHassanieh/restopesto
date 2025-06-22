@@ -1,32 +1,253 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/firebase/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import Link from 'next/link';
+
+// Dashboard Components
+import OrdersSummary from '@/components/OrdersSummary';
+import SalesDashboard from '@/components/SalesDashboard';
+import CustomersDashboard from '@/components/CustomersDashboard';
+import MenuItemsDashboard from '@/components/MenuItemsDashboard';
+import RecentOrders from '@/components/RecentOrders';
+import AnalyticsGraph from '@/components/AnalyticsGraph';
 
 export default function DashboardPage() {
-  const [restaurantName, setRestaurantName] = useState('');
-  const router = useRouter();
+    const [restaurantData, setRestaurantData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+    const [ordersData, setOrdersData] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
+    const [indexError, setIndexError] = useState(false);
+    const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // No user logged in — redirect to login
-        router.push('/admin/login');
-      }
-    });
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                router.push('/admin/login');
+            } else {
+                await fetchRestaurantData();
+            }
+        });
 
-    if (typeof window !== 'undefined') {
-      const name = localStorage.getItem('restaurantName');
-      if (name) setRestaurantName(name);
+        return () => unsubscribe();
+    }, [router]);
+
+    const fetchRestaurantData = async () => {
+        try {
+            // Get subdomain from URL path
+            const pathParts = window.location.pathname.split('/');
+            const subdomain = pathParts[1]; // Adjust index based on your URL structure
+
+            // Fetch restaurant document
+            const q = query(
+                collection(db, 'restaurants'),
+                where('subdomain', '==', subdomain)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const restaurantDoc = querySnapshot.docs[0];
+                const restaurantId = restaurantDoc.id;
+
+                setRestaurantData({
+                    id: restaurantId,
+                    ...restaurantDoc.data()
+                });
+
+                // Try to fetch orders with the composite query
+                try {
+                    const ordersQuery = query(
+                        collection(db, 'orders'),
+                        where('restaurantId', '==', restaurantId),
+                        orderBy('createdAt', 'desc')
+                    );
+                    const ordersSnapshot = await getDocs(ordersQuery);
+                    const orders = ordersSnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            fullName: data.fullName || '',
+                            mobileNumber: data.mobileNumber || '',
+                            totalAmount: typeof data.total === 'number' ? data.total : 0,
+                            status: data.status || 'pending',
+                            createdAt: data.createdAt?.toDate() || new Date(),
+                            createdAt: doc.data().createdAt?.toDate() || new Date(),
+                            updatedAt: doc.data().updatedAt?.toDate() || new Date()
+                        };
+                    });
+                    setOrdersData(orders);
+                    setIndexError(false);
+                } catch (error) {
+                    console.error('Order query error:', error);
+                    if (error.code === 'failed-precondition') {
+                        setIndexError(true);
+                    }
+                    // Fallback: fetch without ordering
+                    const fallbackQuery = query(
+                        collection(db, 'orders'),
+                        where('restaurantId', '==', restaurantId)
+                    );
+                    const fallbackSnapshot = await getDocs(fallbackQuery);
+                    const fallbackOrders = fallbackSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        createdAt: doc.data().createdAt?.toDate() || new Date(),
+                        updatedAt: doc.data().updatedAt?.toDate() || new Date()
+                    }));
+                    // Sort manually as fallback
+                    fallbackOrders.sort((a, b) => b.createdAt - a.createdAt);
+                    setOrdersData(fallbackOrders);
+                }
+
+                // Fetch menu items
+                const menuQuery = query(
+                    collection(db, 'menuItems'),
+                    where('restaurantId', '==', restaurantId)
+                );
+                const menuSnapshot = await getDocs(menuQuery);
+                setMenuItems(menuSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })));
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+        );
     }
 
-    return () => unsubscribe();
-  }, [router]);
+    if (!restaurantData) {
+        return <div className="flex justify-center items-center h-screen">Restaurant not found</div>;
+    }
 
-  return (
-    <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-      Welcome, {restaurantName}
-    </h1>
-  );
+    return (
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <header className="bg-white shadow">
+                <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Welcome, {restaurantData.name}
+                    </h1>
+                    <div className="flex items-center space-x-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            {restaurantData.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            {/* Navigation */}
+            <nav className="bg-white shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex space-x-8">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Overview
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('orders')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Orders
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('sales')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sales' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Sales
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('customers')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'customers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Customers
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('menu')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'menu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Menu Items
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Index creation alert */}
+            {indexError && (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-yellow-700">
+                                    The orders query requires an index. <a href="https://console.firebase.google.com/v1/r/project/restopesto-a4825/firestore/indexes?create_composite=Ck9wcm9qZWN0cy9yZXN0b3Blc3RvLWE0ODI1L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9vcmRlcnMvaW5kZXhlcy9fEAEaEAoMcmVzdGF1cmFudElkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg" target="_blank" rel="noopener noreferrer" className="font-medium underline text-yellow-700 hover:text-yellow-600">Click here to create it</a>. Using fallback sorting until then.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <OrdersSummary orders={ordersData} />
+                            <SalesDashboard orders={ordersData} />
+                            <CustomersDashboard orders={ordersData} />
+                        </div>
+
+                        <div className="bg-white shadow rounded-lg p-6">
+                            <h2 className="text-lg font-medium text-gray-900 mb-4">Order Statistics</h2>
+                            <AnalyticsGraph orders={ordersData} />
+                        </div>
+
+                        <div className="bg-white shadow rounded-lg p-6">
+                            <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Orders</h2>
+                            <RecentOrders orders={ordersData.slice(0, 5)} />
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'orders' && (
+                    <div className="bg-white shadow rounded-lg p-6">
+                        <h2 className="text-lg font-medium text-gray-900 mb-4">All Orders</h2>
+                        <RecentOrders orders={ordersData} showAll />
+                    </div>
+                )}
+
+                {activeTab === 'sales' && (
+                    <SalesDashboard orders={ordersData} detailed />
+                )}
+
+                {activeTab === 'customers' && (
+                    <CustomersDashboard orders={ordersData} detailed />
+                )}
+
+                {activeTab === 'menu' && (
+                    <MenuItemsDashboard menuItems={menuItems} orders={ordersData} />
+                )}
+            </main>
+        </div>
+    );
 }
