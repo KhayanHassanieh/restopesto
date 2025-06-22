@@ -38,8 +38,8 @@ export default function DashboardPage() {
     const fetchRestaurantData = async () => {
         try {
             // Get subdomain from URL path
-            const pathParts = window.location.pathname.split('/');
-            const subdomain = pathParts[0]; // Adjust index based on your URL structure
+            const hostParts = window.location.hostname.split('.');
+            const subdomain = hostParts[0]; // "thecircle" from "thecircle.krave.me"
 
             // Fetch restaurant document
             const q = query(
@@ -57,6 +57,7 @@ export default function DashboardPage() {
                     id: restaurantId,
                     ...restaurantDoc.data()
                 });
+
 
                 // Try to fetch orders with the composite query
                 try {
