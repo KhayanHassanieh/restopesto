@@ -13,7 +13,12 @@ export default function Navbar() {
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center">
               <span className="text-2xl font-bold text-black">
-                <span className="text-[#ffd200]">Krave</span> Menus
+               {/* <span className="text-[#ffd200]">Krave</span> Menus */}
+              <img 
+  src='/logo/Krave Logo.png' 
+  alt="Krave Menus Logo"
+  className="mx-auto mb-3 w-full max-w-[120px]" 
+/>
               </span>
             </Link>
           </div>

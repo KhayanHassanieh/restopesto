@@ -28,9 +28,14 @@ export default function Home() {
 
   {/* Main Hero Content */}
   <div className="max-w-4xl mx-auto relative z-10">
-    <h1 className="text-5xl md:text-6xl font-bold mb-6">
+ <img 
+  src='/logo/Krave Logo.png' 
+  alt="Krave Menus Logo"
+  className="mx-auto mb-6 w-full max-w-[650px]" 
+/>
+    {/*<h1 className="text-5xl md:text-6xl font-bold mb-6">
       <span className="text-[#ffd200]">Transform</span> Your Restaurant&apos;s Ordering
-    </h1>
+    </h1>*/}
     <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
       Smart QR menus with real-time analytics and seamless customer experience
     </p>
@@ -331,20 +336,42 @@ export default function Home() {
         </section>
 
         {/* CTA */}
-        <section className="py-20 bg-[#ffd200]">
-          <div className="max-w-4xl mx-auto text-center px-6">
-            <h2 className="text-4xl font-bold mb-6">Ready to Modernize Your Restaurant?</h2>
-            <p className="text-xl mb-8">
-              Join thousands of restaurants using Krave Menus to streamline operations and enhance customer experience.
-            </p>
-            <a 
-              href="#pricing" 
-              className="bg-[#333333] hover:bg-gray-800 text-[#f3f3f3] px-10 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 inline-block"
-            >
-              Get Started - It&apos;s Free for 14 Days
-            </a>
-          </div>
-        </section>
+       {/* CTA Section with Waves */}
+<section className="relative overflow-hidden bg-[#ffd200] text-center text-black py-20">
+  {/* 🌊 Top Wave (Image) */}
+  <div className="absolute top-0 left-0 w-full -translate-y-[99%]">
+    <img 
+      src="/theme/KraveTheme.png" // Replace with your image path
+      alt="Wave Decoration"
+      className="w-full h-[600px] object-cover" // Adjust height as needed
+    />
+  </div>
+
+  {/* 📝 CTA Content */}
+  <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
+    <h2 className="text-3xl md:text-4xl font-bold mb-6">
+      Ready to Modernize Your Restaurant?
+    </h2>
+    <p className="text-lg md:text-xl mb-8">
+      Join thousands of restaurants using Krave Menus to streamline operations.
+    </p>
+    <a
+      href="#pricing"
+      className="bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-lg text-lg font-bold shadow-lg transition-all"
+    >
+      Get Started – It's Free for 14 Days
+    </a>
+  </div>
+
+  {/* 🌊 Bottom Wave (Image) */}
+  <div className="absolute bottom-0 left-0 w-full translate-y-[99%] rotate-180">
+    <img 
+      src="/path-to-your-wave-image.png" // Same image (flipped)
+      alt="Wave Decoration"
+      className="w-full h-[100px] object-cover" // Match top wave height
+    />
+  </div>
+</section>
 
         {/* Contact */}
         <section id="contact" className="py-20 px-6">
