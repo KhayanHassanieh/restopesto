@@ -44,8 +44,14 @@ export default function RestaurantPage({ subdomain }) {
 
         const restaurantDoc = restaurantQuery.docs[0];
         const restaurantId = restaurantDoc.id;
-        setRestaurant({ id: restaurantId, ...restaurantDoc.data() });
+        const restaurantData = restaurantDoc.data();
 
+        setRestaurant({ id: restaurantId, ...restaurantDoc.data() });
+// 🛑 If the restaurant is inactive, stop further loading
+if (restaurantData.isActive === false) {
+  setLoading(false);
+  return;
+}
         const categoriesSnapshot = await getDocs(
           collection(db, 'restaurants', restaurantId, 'categories')
         );
@@ -252,7 +258,36 @@ export default function RestaurantPage({ subdomain }) {
       </div>
     );
   }
-
+  if (restaurant?.isActive === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center px-4">
+        <div className="max-w-md mx-auto">
+          {restaurant.logoUrl && (
+            <img
+              src={restaurant.logoUrl}
+              alt={`${restaurant.name} logo`}
+              className="h-40 w-40 md:h-32 md:w-32 object-contain mx-auto mb-6"
+            />
+          )}
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            {restaurant.name || 'This restaurant'}
+          </h1>
+          <p className="text-gray-700 text-lg mb-8">is currently out of service.</p>
+        </div>
+  
+        {/* ✅ Powered by Krave Menus */}
+        <div className="mt-20 pb-8">
+          <p className="text-sm text-gray-500 mb-2">Powered by</p>
+          <img
+            src="/logo/Krave Logo.png" // <-- update this path to your actual Krave logo path
+            alt="Krave Menus"
+            className="h-20 mx-auto"
+          />
+        </div>
+      </div>
+    );
+  }
+  
   if (!restaurant) {
     return (
       <div className="flex items-center justify-center min-h-screen">

@@ -47,6 +47,44 @@ app.post('/', async (req, res) => {
 
 exports.updateRestaurantUser = functions.https.onRequest(app);
 
+const { getFirestore } = require('firebase-admin/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+
+const db = getFirestore();
+
+exports.checkExpiredRestaurants = onSchedule(
+    {
+      // Run on the 1st of every month at 3:00 AM Beirut time
+      schedule: '0 0 1 * *',
+      timeZone: 'Asia/Beirut',
+    },
+    async (event) => {
+      const now = new Date();
+      const snapshot = await db.collection('restaurants').get();
+  
+      const batch = db.batch();
+      let expiredCount = 0;
+  
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const expiresAt = data.expiresAt?.toDate?.() || new Date(data.expiresAt);
+  
+        if (expiresAt && now > expiresAt && data.isActive !== false) {
+          console.log(`Disabling expired restaurant: ${data.name || doc.id}`);
+          batch.update(doc.ref, { isActive: false });
+          expiredCount++;
+        }
+      });
+  
+      if (expiredCount > 0) {
+        await batch.commit();
+        console.log(`✅ ${expiredCount} restaurants disabled.`);
+      } else {
+        console.log('No expired restaurants found.');
+      }
+    }
+  );
+  
 
   
 // https://firebase.google.com/docs/functions/get-started
