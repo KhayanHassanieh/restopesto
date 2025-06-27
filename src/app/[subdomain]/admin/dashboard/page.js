@@ -36,11 +36,16 @@ export default function DashboardPage() {
     }, [router]);
 
     const fetchRestaurantData = async () => {
+        let subdomain = ""; 
         try {
             // Get subdomain from URL path
-            const hostParts = window.location.hostname.split('.');
-            const subdomain = hostParts[0]; // "thecircle" from "thecircle.krave.me"
-
+            if (!window.location.hostname.includes(".")) {
+                const hostParts = window.location.pathname.split('/');
+                subdomain = hostParts[1];
+            } else {
+                const hostParts = window.location.hostname.split('.');
+                subdomain = hostParts[0]; // "thecircle" from "thecircle.krave.me"
+            }
             // Fetch restaurant document
             const q = query(
                 collection(db, 'restaurants'),
