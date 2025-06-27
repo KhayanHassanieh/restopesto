@@ -35,8 +35,16 @@ export default function DashboardPage() {
         return () => unsubscribe();
     }, [router]);
 
+    const updateOrderInState = (orderId, updatedData) => {
+        setOrdersData(prevOrders =>
+            prevOrders.map(order =>
+                order.id === orderId ? { ...order, ...updatedData } : order
+            )
+        );
+    };
+
     const fetchRestaurantData = async () => {
-        let subdomain = ""; 
+        let subdomain = "";
         try {
             // Get subdomain from URL path
             if (!window.location.hostname.includes(".")) {
@@ -74,15 +82,19 @@ export default function DashboardPage() {
                     const ordersSnapshot = await getDocs(ordersQuery);
                     const orders = ordersSnapshot.docs.map(doc => {
                         const data = doc.data();
+                        const amount = typeof data.finalTotal === 'number' ? data.finalTotal :
+                            typeof data.total === 'number' ? data.total :
+                                typeof data.totalAmount === 'number' ? data.totalAmount : 0;
                         return {
                             id: doc.id,
                             fullName: data.fullName || '',
                             mobileNumber: data.mobileNumber || '',
-                            totalAmount: typeof data.total === 'number' ? data.total : 0,
+                            finalTotal: amount,  // Always use finalTotal
+                            totalAmount: amount, // Keep for backward compatibility if needed
+                            total: amount,       // Keep for backward compatibility if needed
                             status: data.status || 'pending',
                             createdAt: data.createdAt?.toDate() || new Date(),
-                            createdAt: doc.data().createdAt?.toDate() || new Date(),
-                            updatedAt: doc.data().updatedAt?.toDate() || new Date()
+                            updatedAt: data.updatedAt?.toDate() || new Date()
                         };
                     });
                     setOrdersData(orders);
@@ -230,7 +242,8 @@ export default function DashboardPage() {
 
                         <div className="bg-white shadow rounded-lg p-6">
                             <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Orders</h2>
-                            <RecentOrders orders={ordersData.slice(0, 5)} />
+                            <RecentOrders orders={ordersData.slice(0, 5)}
+                                onOrderUpdate={updateOrderInState} />
                         </div>
                     </div>
                 )}
@@ -238,7 +251,7 @@ export default function DashboardPage() {
                 {activeTab === 'orders' && (
                     <div className="bg-white shadow rounded-lg p-6">
                         <h2 className="text-lg font-medium text-gray-900 mb-4">All Orders</h2>
-                        <RecentOrders orders={ordersData} showAll />
+                        <RecentOrders orders={ordersData} showAll onOrderUpdate={updateOrderInState} />
                     </div>
                 )}
 
