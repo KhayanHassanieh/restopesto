@@ -89,6 +89,11 @@ export default function DashboardPage() {
                             id: doc.id,
                             fullName: data.fullName || '',
                             mobileNumber: data.mobileNumber || '',
+                            cart: data.cart || [],
+                            addressDetails: data.addressDetails || '',
+                            area: data.area || '',
+                            region: data.region || '',
+                            branchId: data.branchId || '',
                             finalTotal: amount,  // Always use finalTotal
                             totalAmount: amount, // Keep for backward compatibility if needed
                             total: amount,       // Keep for backward compatibility if needed
