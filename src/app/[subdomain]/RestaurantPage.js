@@ -788,13 +788,13 @@ if (restaurantData.isActive === false) {
           <LocationPicker
             initialLocation={location}
             onBack={() => setCheckoutStep('address')}
-            onConfirm={(pos) => {
-              setLocation(pos);
+            onConfirm={({ lat, lng, mapUrl }) => {
+              setLocation({ lat, lng });
               setOrderData(prev => ({
                 ...prev,
-                lat: pos.lat,
-                lng: pos.lng,
-                locationUrl: `https://maps.google.com/?q=${pos.lat},${pos.lng}`
+                lat,
+                lng,
+                mapUrl
               }));
               setCheckoutStep('payment');
             }}
@@ -862,7 +862,7 @@ if (restaurantData.isActive === false) {
                       `Phone: +961${orderData.mobileNumber}`,
                       `Region: ${orderData.region}, Area: ${orderData.area}`,
                       `Address: ${orderData.addressDetails}`,
-                      `Location: ${orderData.locationUrl}`,
+                      `Location: ${orderData.mapUrl}`,
                       '',
                       ...orderData.cart.map((item, i) => {
                         const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
