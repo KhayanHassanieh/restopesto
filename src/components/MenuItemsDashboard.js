@@ -2,9 +2,23 @@ export default function MenuItemsDashboard({ menuItems, orders }) {
     // Calculate sold quantities for each menu item
     const itemsWithQuantities = menuItems.map(item => {
       const quantity = orders.reduce((sum, order) => {
-        const orderItem = order.items.find(oi => oi.menuItemId === item.id);
-        return sum + (orderItem ? orderItem.quantity : 0);
+        const orderItems = Array.isArray(order.cart) ? order.cart : [];
+
+        const matched = orderItems.filter(
+          (oi) =>
+            oi.menuItemId === item.id ||
+            oi.itemId === item.id ||
+            oi.id === item.id
+        );
+
+        const qty = matched.reduce(
+          (q, oi) => q + (oi.quantity || oi.qty || 0),
+          0
+        );
+
+        return sum + qty;
       }, 0);
+
       return { ...item, quantitySold: quantity };
     });
   
