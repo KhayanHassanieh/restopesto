@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { generateMapUrl } from '@/utils/map';
 
-export default function LocationPicker({ onBack, onComplete, initialLocation }) {
+export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });
@@ -20,7 +20,7 @@ export default function LocationPicker({ onBack, onComplete, initialLocation }) 
     };
   }, []);
 
-  // Get current position
+  // Get current position once loaded
   useEffect(() => {
     if (!isLoaded) return;
     if (navigator.geolocation) {
@@ -39,12 +39,16 @@ export default function LocationPicker({ onBack, onComplete, initialLocation }) 
     } else if (!center) {
       setCenter({ lat: 0, lng: 0 });
     }
-  }, [isLoaded, center]);
+  }, [isLoaded]);
 
-  const handleCenterChanged = () => {
+  const handleIdle = () => {
     if (!mapRef.current) return;
     const c = mapRef.current.getCenter();
-    setCenter({ lat: c.lat(), lng: c.lng() });
+    const newLat = c.lat();
+    const newLng = c.lng();
+    if (!center || newLat !== center.lat || newLng !== center.lng) {
+      setCenter({ lat: newLat, lng: newLng });
+    }
   };
 
   if (!isLoaded || !center) {
@@ -64,7 +68,7 @@ export default function LocationPicker({ onBack, onComplete, initialLocation }) 
           onLoad={(map) => {
             mapRef.current = map;
           }}
-          onCenterChanged={handleCenterChanged}
+          onIdle={handleIdle}
           mapContainerStyle={{ width: '100%', height: '100%' }}
         />
         <img
@@ -92,7 +96,7 @@ export default function LocationPicker({ onBack, onComplete, initialLocation }) 
           <button
             type="button"
             onClick={() =>
-              onComplete({
+              onConfirm({
                 lat: center.lat,
                 lng: center.lng,
                 mapUrl: generateMapUrl(center.lat, center.lng),
