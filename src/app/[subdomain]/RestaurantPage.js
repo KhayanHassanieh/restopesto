@@ -4,6 +4,7 @@ import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
+import LocationPicker from '@/components/LocationPicker';
 import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -28,6 +29,7 @@ export default function RestaurantPage({ subdomain }) {
   const [cartStatus, setCartStatus] = useState('active');
   const [checkoutStep, setCheckoutStep] = useState(null);
   const [orderData, setOrderData] = useState(null);
+  const [location, setLocation] = useState(null);
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
@@ -775,6 +777,25 @@ if (restaurantData.isActive === false) {
                 restaurantId: restaurant.id,
                 cartId
               });
+              setCheckoutStep('location');
+            }}
+          />
+        </div>
+      )}
+
+      {checkoutStep === 'location' && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <LocationPicker
+            initialLocation={location}
+            onBack={() => setCheckoutStep('address')}
+            onConfirm={(pos) => {
+              setLocation(pos);
+              setOrderData(prev => ({
+                ...prev,
+                lat: pos.lat,
+                lng: pos.lng,
+                locationUrl: `https://maps.google.com/?q=${pos.lat},${pos.lng}`
+              }));
               setCheckoutStep('payment');
             }}
           />
@@ -810,7 +831,7 @@ if (restaurantData.isActive === false) {
 
             <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
               <button
-                onClick={() => setCheckoutStep('address')}
+                onClick={() => setCheckoutStep('location')}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Previous
@@ -841,6 +862,7 @@ if (restaurantData.isActive === false) {
                       `Phone: +961${orderData.mobileNumber}`,
                       `Region: ${orderData.region}, Area: ${orderData.area}`,
                       `Address: ${orderData.addressDetails}`,
+                      `Location: ${orderData.locationUrl}`,
                       '',
                       ...orderData.cart.map((item, i) => {
                         const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
