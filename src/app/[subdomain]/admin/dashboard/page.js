@@ -90,6 +90,7 @@ export default function DashboardPage() {
                             fullName: data.fullName || '',
                             mobileNumber: data.mobileNumber || '',
                             cart: data.cart || [],
+                            items: data.items || [],
                             addressDetails: data.addressDetails || '',
                             area: data.area || '',
                             region: data.region || '',

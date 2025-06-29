@@ -2,7 +2,11 @@ export default function MenuItemsDashboard({ menuItems, orders }) {
     // Calculate sold quantities for each menu item
     const itemsWithQuantities = menuItems.map(item => {
       const quantity = orders.reduce((sum, order) => {
-        const orderItems = Array.isArray(order.cart) ? order.cart : [];
+        const orderItems = Array.isArray(order.cart)
+          ? order.cart
+          : Array.isArray(order.items)
+            ? order.items
+            : [];
 
         const matched = orderItems.filter(
           (oi) =>
