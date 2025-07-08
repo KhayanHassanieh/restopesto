@@ -22,15 +22,26 @@ export default function UserLoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const q = query(
-        collection(db, 'restaurantUsers'),
-        where('uid', '==', user.uid)
-      );
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) throw new Error('No linked restaurant found.');
+      let restaurantId = null;
+      let branchId = null;
 
-      const userDoc = snapshot.docs[0];
-      const { restaurantId } = userDoc.data();
+      let snapshot = await getDocs(
+        query(collection(db, 'restaurantUsers'), where('uid', '==', user.uid))
+      );
+
+      if (!snapshot.empty) {
+        const userDoc = snapshot.docs[0];
+        restaurantId = userDoc.data().restaurantId;
+      } else {
+        snapshot = await getDocs(
+          query(collection(db, 'branchUsers'), where('uid', '==', user.uid))
+        );
+        if (snapshot.empty) throw new Error('No linked restaurant found.');
+        const userDoc = snapshot.docs[0];
+        restaurantId = userDoc.data().restaurantId;
+        branchId = userDoc.data().branchId;
+        localStorage.setItem('branchId', branchId);
+      }
 
       // ✅ Fetch restaurant name and save to localStorage
       const restaurantSnap = await getDoc(doc(db, 'restaurants', restaurantId));
