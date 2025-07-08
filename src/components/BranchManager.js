@@ -5,7 +5,7 @@ import { db } from '@/firebase/firebaseConfig';
 
 export default function BranchManager({ restaurantId, visible }) {
   const [branches, setBranches] = useState([]);
-  const [newBranch, setNewBranch] = useState({ name: '', phone: '', city: '', areas: '' });
+  const [newBranch, setNewBranch] = useState({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '',instagramURL:'',tiktokURL:'',facebookURL:''  });
   const [editingBranch, setEditingBranch] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -40,11 +40,16 @@ export default function BranchManager({ restaurantId, visible }) {
     await addDoc(branchRef, {
       name: newBranch.name,
       phone: newBranch.phone,
+      openingHours: newBranch.openingHours,
+      location: newBranch.location,
       city: newBranch.city,
+      instagramURL: newBranch.instagramURL,
+      tiktokURL: newBranch.tiktokURL,
+      facebookURL: newBranch.facebookURL,
       areas: newBranch.areas.split(',').map(a => a.trim())
     });
 
-    setNewBranch({ name: '', phone: '', city: '', areas: '' });
+    setNewBranch({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '',instagramURL:'',tiktokURL:'',facebookURL:'' });
     setIsAdding(false);
 
     const snap = await getDocs(branchRef);
@@ -82,7 +87,12 @@ export default function BranchManager({ restaurantId, visible }) {
     await updateDoc(branchRef, {
       name: updatedBranch.name,
       phone: updatedBranch.phone,
+      openingHours: updatedBranch.openingHours,
+      location: updatedBranch.location,
       city: updatedBranch.city,
+      instagramURL: updatedBranch.instagramURL,
+      tiktokURL: updatedBranch.tiktokURL,
+      facebookURL: updatedBranch.facebookURL,
       areas: updatedBranch.areas
     });
 
@@ -199,6 +209,51 @@ export default function BranchManager({ restaurantId, visible }) {
                       onChange={(e) => setEditingBranch({ ...editingBranch, areas: e.target.value })}
                     />
                   </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={editingBranch.openingHours}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, openingHours: e.target.value })}
+                    />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={editingBranch.location}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, location: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={editingBranch.instagramURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, instagramURL: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tiktok Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={editingBranch.tiktokURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, tiktokURL: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      value={editingBranch.facebookURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, facebookURL: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-2 pt-2">
                   <button
@@ -262,6 +317,56 @@ export default function BranchManager({ restaurantId, visible }) {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 value={newBranch.areas}
                 onChange={(e) => setNewBranch({ ...newBranch, areas: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+              <input
+                type="text"
+                placeholder="9:00 AM - 12:00 PM"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={newBranch.openingHours}
+                onChange={(e) => setNewBranch({ ...newBranch, openingHours: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input
+                type="text"
+                placeholder="Downtown - Beirut"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={newBranch.location}
+                onChange={(e) => setNewBranch({ ...newBranch, location: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Page</label>
+              <input
+                type="text"
+                placeholder="https://instagram/krave.me"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={newBranch.instagramURL}
+                onChange={(e) => setNewBranch({ ...newBranch, instagramURL: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tiktok Page</label>
+              <input
+                type="text"
+                placeholder="https://www.tiktok.com/@krave.me"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={newBranch.tiktokURL}
+                onChange={(e) => setNewBranch({ ...newBranch, tiktokURL: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Page</label>
+              <input
+                type="text"
+                placeholder="https://www.facebook.com/krave.me/"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                value={newBranch.facebookURL}
+                onChange={(e) => setNewBranch({ ...newBranch, facebookURL: e.target.value })}
               />
             </div>
           </div>

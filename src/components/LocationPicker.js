@@ -60,7 +60,7 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm w-full h-full flex flex-col">
+    <div className="bg-white rounded-lg shadow-sm w-full h-150 flex flex-col">
       <div className="relative flex-1">
         <GoogleMap
           center={center}
@@ -78,9 +78,9 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
         />
       </div>
       <div className="p-4 space-y-4">
-        <p className="text-center text-sm text-gray-800">
+        {/*<p className="text-center text-sm text-gray-800">
           Lat: {center.lat.toFixed(5)}, Lng: {center.lng.toFixed(5)}
-        </p>
+        </p>*/}
         <div className="flex justify-between gap-2">
           <button
             type="button"
