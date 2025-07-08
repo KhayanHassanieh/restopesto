@@ -47,7 +47,7 @@ export default function DashboardPage() {
         let subdomain = "";
         try {
             // Get subdomain from URL path
-            if (!window.location.hostname.includes(".")) {
+            if (window.location.hostname.includes("localhost")) {
                 const hostParts = window.location.pathname.split('/');
                 subdomain = hostParts[1];
             } else {

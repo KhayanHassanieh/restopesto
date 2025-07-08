@@ -6,7 +6,7 @@ export function middleware(request) {
   const hostname = request.headers.get('host') || '';
 
   // ✅ Skip middleware for local dev and Vercel previews
-  if (hostname.includes('localhost') || hostname.includes('vercel.app')) {
+  if (hostname.includes('localhost') || hostname.includes('vercel.app') || hostname.includes('192.168.16.188')) {
     return NextResponse.next();
   }
 

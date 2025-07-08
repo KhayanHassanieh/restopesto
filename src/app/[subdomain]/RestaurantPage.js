@@ -4,6 +4,7 @@ import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
+import LocationPicker from '@/components/LocationPicker';
 import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -13,7 +14,7 @@ export default function RestaurantPage({ subdomain }) {
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState([]);
+  const [items, setCart] = useState([]);
   const [cartVisible, setCartVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedAddons, setSelectedAddons] = useState([]);
@@ -28,6 +29,7 @@ export default function RestaurantPage({ subdomain }) {
   const [cartStatus, setCartStatus] = useState('active');
   const [checkoutStep, setCheckoutStep] = useState(null);
   const [orderData, setOrderData] = useState(null);
+  const [location, setLocation] = useState(null);
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
@@ -239,7 +241,7 @@ if (restaurantData.isActive === false) {
     removeItemFromCart(cartId, itemKey)
   };
 
-  const cartTotal = cart.reduce((sum, item) => {
+  const cartTotal = items.reduce((sum, item) => {
     const total =
       typeof item.finalTotal === 'number'
         ? item.finalTotal
@@ -607,7 +609,7 @@ if (restaurantData.isActive === false) {
 
           {/* Cart Body */}
           <div className="flex-1 overflow-y-auto">
-            {cart.length === 0 ? (
+            {items.length === 0 ? (
               <div className="text-center py-12">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -617,7 +619,7 @@ if (restaurantData.isActive === false) {
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {cart.map(item => (
+                {items.map(item => (
                   <div key={item.customKey} className="py-4">
                     <div className="flex justify-between">
                       <div className="flex-1">
@@ -696,7 +698,7 @@ if (restaurantData.isActive === false) {
           </div>
 
           {/* Footer: Share + Totals + Checkout */}
-          {cart.length > 0 && (
+          {items.length > 0 && (
             <div className="border-t border-gray-200 pt-4">
               <button
                 onClick={() => {
@@ -742,7 +744,7 @@ if (restaurantData.isActive === false) {
 
 
       {/* Cart Floating Button */}
-      {cart.length > 0 && cartStatus !== 'completed' && (
+      {items.length > 0 && cartStatus !== 'completed' && (
         <button
           onClick={() => setCartVisible(true)}
           className="fixed bottom-6 right-6 hover:brightness-105 text-white p-4 rounded-full shadow-lg z-10 flex items-center"
@@ -754,7 +756,7 @@ if (restaurantData.isActive === false) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           <span className="ml-2">
-            {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+            {items.reduce((sum, item) => sum + item.quantity, 0)} items
           </span>
           <span className="ml-2 font-bold">
             ${cartTotal.toFixed(2)}
@@ -762,6 +764,7 @@ if (restaurantData.isActive === false) {
         </button>
       )}
       {checkoutStep === 'address' && (
+       
         <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-50 flex items-center justify-center p-4">
           <CheckoutForm
             restaurantId={restaurant.id}
@@ -769,12 +772,32 @@ if (restaurantData.isActive === false) {
             onBack={() => setCheckoutStep(null)}
             onComplete={(addressData) => {
               setOrderData({
+                
                 ...addressData,
-                cart,
+                items,
                 total: cartTotal * 1.1,
                 restaurantId: restaurant.id,
                 cartId
               });
+              setCheckoutStep('location');
+            }}
+          />
+        </div>
+      )}
+
+      {checkoutStep === 'location' && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <LocationPicker
+            initialLocation={location}
+            onBack={() => setCheckoutStep('address')}
+            onConfirm={({ lat, lng, mapUrl }) => {
+              setLocation({ lat, lng });
+              setOrderData(prev => ({
+                ...prev,
+                lat,
+                lng,
+                mapUrl
+              }));
               setCheckoutStep('payment');
             }}
           />
@@ -810,7 +833,7 @@ if (restaurantData.isActive === false) {
 
             <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
               <button
-                onClick={() => setCheckoutStep('address')}
+                onClick={() => setCheckoutStep('location')}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
               >
                 Previous
@@ -841,8 +864,9 @@ if (restaurantData.isActive === false) {
                       `Phone: +961${orderData.mobileNumber}`,
                       `Region: ${orderData.region}, Area: ${orderData.area}`,
                       `Address: ${orderData.addressDetails}`,
+                      `Location: ${orderData.mapUrl}`,
                       '',
-                      ...orderData.cart.map((item, i) => {
+                      ...orderData.items.map((item, i) => {
                         const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
                         const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
                         const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';

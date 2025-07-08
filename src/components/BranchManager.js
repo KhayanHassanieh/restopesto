@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { collection, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase/firebaseConfig';
+import { collection, getDocs, addDoc, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
+import { db, auth, firebaseConfig } from '@/firebase/firebaseConfig';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 
 export default function BranchManager({ restaurantId, visible }) {
   const [branches, setBranches] = useState([]);
-  const [newBranch, setNewBranch] = useState({ name: '', phone: '', city: '', areas: '' });
+  const [newBranch, setNewBranch] = useState({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '',instagramURL:'',tiktokURL:'',facebookURL:'', username:'', password:''  });
   const [editingBranch, setEditingBranch] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -35,16 +37,42 @@ export default function BranchManager({ restaurantId, visible }) {
   }, [visible, restaurantId]);
 
   const addBranch = async () => {
-    if (!newBranch.name || !newBranch.phone) return;
+    if (!newBranch.name || !newBranch.phone || !newBranch.username || !newBranch.password) return;
+
+    const email = newBranch.username.includes('@') ? newBranch.username : `${newBranch.username}@krave.me`;
+
+    // Use a secondary app so the current session stays intact
+    const secondaryApp = initializeApp(firebaseConfig, 'branchSecondary');
+    const secondaryAuth = getAuth(secondaryApp);
+
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, newBranch.password);
+    const user = userCredential.user;
+
     const branchRef = collection(db, 'restaurants', restaurantId, 'branches');
-    await addDoc(branchRef, {
+    const docRef = await addDoc(branchRef, {
       name: newBranch.name,
       phone: newBranch.phone,
+      openingHours: newBranch.openingHours,
+      location: newBranch.location,
       city: newBranch.city,
+      instagramURL: newBranch.instagramURL,
+      tiktokURL: newBranch.tiktokURL,
+      facebookURL: newBranch.facebookURL,
+      username: email,
       areas: newBranch.areas.split(',').map(a => a.trim())
     });
 
-    setNewBranch({ name: '', phone: '', city: '', areas: '' });
+    await addDoc(collection(db, 'branchUsers'), {
+      uid: user.uid,
+      restaurantId,
+      branchId: docRef.id,
+      email,
+      createdAt: new Date()
+    });
+
+    await signOut(secondaryAuth);
+
+    setNewBranch({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '',instagramURL:'',tiktokURL:'',facebookURL:'', username:'', password:'' });
     setIsAdding(false);
 
     const snap = await getDocs(branchRef);
@@ -65,8 +93,20 @@ export default function BranchManager({ restaurantId, visible }) {
     }
   };
 
-  const handleEditBranch = (branch) => {
-    setEditingBranch({ ...branch });
+  const handleEditBranch = async (branch) => {
+    let username = '';
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'branchUsers'), where('branchId', '==', branch.id))
+      );
+      if (!snap.empty) {
+        username = snap.docs[0].data().email;
+      }
+    } catch (err) {
+      console.error('Failed to fetch branch user:', err);
+    }
+
+    setEditingBranch({ ...branch, username, password: '' });
   };
 
   const handleUpdateBranch = async () => {
@@ -78,13 +118,57 @@ export default function BranchManager({ restaurantId, visible }) {
       updatedBranch.areas = updatedBranch.areas.split(',').map(a => a.trim());
     }
 
-    const branchRef = doc(db, 'restaurants', restaurantId, 'branches', updatedBranch.id);
-    await updateDoc(branchRef, {
+  const branchRef = doc(db, 'restaurants', restaurantId, 'branches', updatedBranch.id);
+  await updateDoc(branchRef, {
       name: updatedBranch.name,
       phone: updatedBranch.phone,
+      openingHours: updatedBranch.openingHours,
+      location: updatedBranch.location,
       city: updatedBranch.city,
+      instagramURL: updatedBranch.instagramURL,
+      tiktokURL: updatedBranch.tiktokURL,
+      facebookURL: updatedBranch.facebookURL,
+      username: updatedBranch.username,
       areas: updatedBranch.areas
-    });
+  });
+
+    const userSnap = await getDocs(
+      query(collection(db, 'branchUsers'), where('branchId', '==', updatedBranch.id))
+    );
+
+    if (!userSnap.empty) {
+      const userDoc = userSnap.docs[0];
+      const currentEmail = userDoc.data().email;
+      const uid = userDoc.data().uid;
+
+      const newEmail = updatedBranch.username.includes('@') ? updatedBranch.username : `${updatedBranch.username}@krave.me`;
+
+      const emailChanged = newEmail && newEmail !== currentEmail;
+      const passwordChanged = updatedBranch.password && updatedBranch.password.length > 0;
+
+      if (emailChanged) {
+        await updateDoc(doc(db, 'branchUsers', userDoc.id), {
+          email: newEmail,
+          updatedAt: new Date()
+        });
+      }
+
+      if (emailChanged || passwordChanged) {
+        const userToken = await auth.currentUser.getIdToken();
+        await fetch('https://updaterestaurantuser-zsgpdxuheq-uc.a.run.app', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${userToken}`
+          },
+          body: JSON.stringify({
+            uid,
+            ...(emailChanged && { newEmail }),
+            ...(passwordChanged && { newPassword: updatedBranch.password })
+          })
+        });
+      }
+    }
 
     setBranches(prevBranches =>
       prevBranches.map(branch =>
@@ -167,7 +251,7 @@ export default function BranchManager({ restaurantId, visible }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Branch Name</label>
                     <input
                       type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
                       value={editingBranch.name}
                       onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
                     />
@@ -176,16 +260,34 @@ export default function BranchManager({ restaurantId, visible }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
                       value={editingBranch.phone}
                       onChange={(e) => setEditingBranch({ ...editingBranch, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.username}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, username: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input
+                      type="password"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.password}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, password: e.target.value })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input
                       type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
                       value={editingBranch.city}
                       onChange={(e) => setEditingBranch({ ...editingBranch, city: e.target.value })}
                     />
@@ -194,9 +296,54 @@ export default function BranchManager({ restaurantId, visible }) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Areas (comma separated)</label>
                     <input
                       type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
                       value={Array.isArray(editingBranch.areas) ? editingBranch.areas.join(', ') : editingBranch.areas}
                       onChange={(e) => setEditingBranch({ ...editingBranch, areas: e.target.value })}
+                    />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.openingHours}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, openingHours: e.target.value })}
+                    />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.location}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, location: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.instagramURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, instagramURL: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tiktok Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.tiktokURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, tiktokURL: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Page</label>
+                    <input
+                      type="text"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                      value={editingBranch.facebookURL}
+                      onChange={(e) => setEditingBranch({ ...editingBranch, facebookURL: e.target.value })}
                     />
                   </div>
                 </div>
@@ -229,27 +376,47 @@ export default function BranchManager({ restaurantId, visible }) {
               <input
                 type="text"
                 placeholder="e.g. Downtown Branch"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
                 value={newBranch.name}
                 onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone*</label>
-              <input
-                type="text"
-                placeholder="e.g. +1234567890"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                value={newBranch.phone}
-                onChange={(e) => setNewBranch({ ...newBranch, phone: e.target.value })}
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone*</label>
+            <input
+              type="text"
+              placeholder="e.g. +1234567890"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+              value={newBranch.phone}
+              onChange={(e) => setNewBranch({ ...newBranch, phone: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username*</label>
+            <input
+              type="text"
+              placeholder="branchuser"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+              value={newBranch.username}
+              onChange={(e) => setNewBranch({ ...newBranch, username: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password*</label>
+            <input
+              type="password"
+              placeholder="••••••"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+              value={newBranch.password}
+              onChange={(e) => setNewBranch({ ...newBranch, password: e.target.value })}
+            />
+          </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
               <input
                 type="text"
                 placeholder="e.g. New York"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent  placeholder:text-gray-800 text-gray-800"
                 value={newBranch.city}
                 onChange={(e) => setNewBranch({ ...newBranch, city: e.target.value })}
               />
@@ -259,9 +426,60 @@ export default function BranchManager({ restaurantId, visible }) {
               <input
                 type="text"
                 placeholder="e.g. Downtown, Midtown, Uptown"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent  placeholder:text-gray-800 text-gray-800"
                 value={newBranch.areas}
                 onChange={(e) => setNewBranch({ ...newBranch, areas: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
+              <input
+                type="text"
+                placeholder="9:00 AM - 12:00 PM"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                value={newBranch.openingHours}
+                onChange={(e) => setNewBranch({ ...newBranch, openingHours: e.target.value })}
+              />
+              
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input
+                type="text"
+                placeholder="Downtown - Beirut"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent  placeholder:text-gray-800 text-gray-800"
+                value={newBranch.location}
+                onChange={(e) => setNewBranch({ ...newBranch, location: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Page</label>
+              <input
+                type="text"
+                placeholder="https://instagram/krave.me"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent  placeholder:text-gray-800 text-gray-800"
+                value={newBranch.instagramURL}
+                onChange={(e) => setNewBranch({ ...newBranch, instagramURL: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tiktok Page</label>
+              <input
+                type="text"
+                placeholder="https://www.tiktok.com/@krave.me"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent  placeholder:text-gray-800 text-gray-800"
+                value={newBranch.tiktokURL}
+                onChange={(e) => setNewBranch({ ...newBranch, tiktokURL: e.target.value })}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Page</label>
+              <input
+                type="text"
+                placeholder="https://www.facebook.com/krave.me/"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                value={newBranch.facebookURL}
+                onChange={(e) => setNewBranch({ ...newBranch, facebookURL: e.target.value })}
               />
             </div>
           </div>
@@ -275,7 +493,7 @@ export default function BranchManager({ restaurantId, visible }) {
             <button
               onClick={addBranch}
               className="px-4 py-2 bg-[#7b68ee] hover:bg-[#6a58d6] text-white rounded-md text-sm font-medium transition-colors"
-              disabled={!newBranch.name || !newBranch.phone}
+              disabled={!newBranch.name || !newBranch.phone || !newBranch.username || !newBranch.password}
             >
               Add Branch
             </button>
