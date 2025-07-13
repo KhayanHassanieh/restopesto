@@ -19,6 +19,7 @@ import SortableMenuList from '@/components/SortableMenuList';
 export default function RestaurantMenuPage() {
   const { id } = useParams();
 
+
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
   const [newCategory, setNewCategory] = useState('');
@@ -68,6 +69,7 @@ export default function RestaurantMenuPage() {
             ? item.sortOrder
             : parseInt(item.sortOrder, 10) || index;
 
+
         // ✅ Force addons from subcollection only
         const addonsSnap = await getDocs(collection(db, 'restaurants', id, 'menu', docSnap.id, 'addons'));
         item.addons = addonsSnap.docs.map(doc => doc.data());
@@ -78,6 +80,7 @@ export default function RestaurantMenuPage() {
 
     data.sort((a, b) => a.sortOrder - b.sortOrder);
     setMenuItems(data);
+
   };
 
 
@@ -156,6 +159,19 @@ export default function RestaurantMenuPage() {
   const deleteMenuItem = async (itemId) => {
     await deleteDoc(doc(db, 'restaurants', id, 'menu', itemId));
     fetchMenuItems();
+  };
+
+  const handleReorder = async (items) => {
+    setMenuItems(items);
+    await Promise.all(
+      items.map((item, index) => {
+        if (item.sortOrder !== index) {
+          item.sortOrder = index;
+          return updateDoc(doc(db, 'restaurants', id, 'menu', item.id), { sortOrder: index });
+        }
+        return null;
+      })
+    );
   };
 
   const handleReorder = async (items) => {
@@ -300,6 +316,24 @@ export default function RestaurantMenuPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Reorder Menu Items */}
+          <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
+            <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">Reorder Items</h3>
+            </div>
+            <div className="p-4">
+              <SortableMenuList
+                items={menuItems}
+                onReorder={handleReorder}
+                renderItem={(item) => (
+                  <div className="p-2 border rounded bg-gray-50 mb-2 cursor-move">
+                    {item.name}
+                  </div>
+                )}
+              />
             </div>
           </div>
 
