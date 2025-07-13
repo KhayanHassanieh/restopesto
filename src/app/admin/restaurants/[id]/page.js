@@ -17,10 +17,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'fire
 import SortableMenuList from '@/components/SortableMenuList';
 
 export default function RestaurantMenuPage() {
-  console.log('Component mounted'); // 🔍 Check this shows in your console
-
   const { id } = useParams();
-  console.log('Restaurant ID:', id);
 
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -51,13 +48,11 @@ export default function RestaurantMenuPage() {
   useEffect(() => {
     fetchCategories();
     fetchMenuItems();
-    console.log('Fetching data...');
   }, []);
 
   const fetchCategories = async () => {
     const snap = await getDocs(collection(db, 'restaurants', id, 'categories'));
     const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    console.log('Categories:', data); // 👈 check this
     setCategories(data);
   };
 
