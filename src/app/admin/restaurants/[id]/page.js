@@ -349,7 +349,9 @@ export default function RestaurantMenuPage() {
             </div>
             <div className="p-4">
               <SortableMenuList
-                items={menuItems}
+                items={menuItems.filter(
+                  (item) => selectedCategoryId === '' || item.typeId === selectedCategoryId
+                )}
                 onReorder={handleReorder}
                 renderItem={(item) => (
                   <div className="p-2 border rounded bg-gray-50 mb-2 cursor-move">
