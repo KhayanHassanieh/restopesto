@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
+
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
@@ -90,8 +91,8 @@ if (restaurantData.isActive === false) {
         );
 
         itemsWithAddons.sort((a, b) => a.sortOrder - b.sortOrder);
-
         setMenuItems(itemsWithAddons);
+
 
         const branchesSnapshot = await getDocs(
           collection(db, 'restaurants', restaurantId, 'branches')
