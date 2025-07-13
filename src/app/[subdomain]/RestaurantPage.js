@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
-import { collection, getDocs, getDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
+
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
@@ -60,27 +61,38 @@ if (restaurantData.isActive === false) {
         const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCategories(cats);
 
-        const menuSnapshot = await getDocs(
-          collection(db, 'restaurants', restaurantId, 'menu')
+        const menuQuery = query(
+          collection(db, 'restaurants', restaurantId, 'menu'),
+          orderBy('sortOrder')
+        );
+        const menuSnapshot = await getDocs(menuQuery);
+
+        const itemsWithAddons = await Promise.all(
+          menuSnapshot.docs.map(async (docSnap, index) => {
+            const data = docSnap.data();
+            const addonsSnapshot = await getDocs(
+              collection(db, 'restaurants', restaurantId, 'menu', docSnap.id, 'addons')
+            );
+            const addons = addonsSnapshot.docs.map(addonDoc => ({
+              id: addonDoc.id,
+              ...addonDoc.data()
+            }));
+
+            return {
+              id: docSnap.id,
+              ...data,
+              sortOrder:
+                typeof data.sortOrder === 'number'
+                  ? data.sortOrder
+                  : parseInt(data.sortOrder, 10) || index,
+              addons
+            };
+          })
         );
 
-        const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
-          const addonsSnapshot = await getDocs(
-            collection(db, 'restaurants', restaurantId, 'menu', doc.id, 'addons')
-          );
-          const addons = addonsSnapshot.docs.map(addonDoc => ({
-            id: addonDoc.id,
-            ...addonDoc.data()
-          }));
-
-          return {
-            id: doc.id,
-            ...doc.data(),
-            addons
-          };
-        }));
-
+        itemsWithAddons.sort((a, b) => a.sortOrder - b.sortOrder);
         setMenuItems(itemsWithAddons);
+
 
         const branchesSnapshot = await getDocs(
           collection(db, 'restaurants', restaurantId, 'branches')
