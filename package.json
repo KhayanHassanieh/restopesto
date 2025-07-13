@@ -21,7 +21,9 @@
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-scroll": "^1.9.3",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@dnd-kit/core": "^6.0.6",
+    "@dnd-kit/sortable": "^7.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
