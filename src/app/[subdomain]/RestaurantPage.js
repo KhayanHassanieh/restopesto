@@ -66,23 +66,31 @@ if (restaurantData.isActive === false) {
         );
         const menuSnapshot = await getDocs(menuQuery);
 
-        const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
-          const addonsSnapshot = await getDocs(
-            collection(db, 'restaurants', restaurantId, 'menu', doc.id, 'addons')
-          );
-          const addons = addonsSnapshot.docs.map(addonDoc => ({
-            id: addonDoc.id,
-            ...addonDoc.data()
-          }));
+        const itemsWithAddons = await Promise.all(
+          menuSnapshot.docs.map(async (docSnap, index) => {
+            const data = docSnap.data();
+            const addonsSnapshot = await getDocs(
+              collection(db, 'restaurants', restaurantId, 'menu', docSnap.id, 'addons')
+            );
+            const addons = addonsSnapshot.docs.map(addonDoc => ({
+              id: addonDoc.id,
+              ...addonDoc.data()
+            }));
 
-          return {
-            id: doc.id,
-            ...doc.data(),
-            addons
-          };
-        }));
+            return {
+              id: docSnap.id,
+              ...data,
+              sortOrder:
+                typeof data.sortOrder === 'number'
+                  ? data.sortOrder
+                  : parseInt(data.sortOrder, 10) || index,
+              addons
+            };
+          })
+        );
 
-        itemsWithAddons.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+        itemsWithAddons.sort((a, b) => a.sortOrder - b.sortOrder);
+
         setMenuItems(itemsWithAddons);
 
         const branchesSnapshot = await getDocs(
