@@ -8,16 +8,16 @@ import {
   addDoc,
   doc,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  query,
+  orderBy
 } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import SortableMenuList from '@/components/SortableMenuList';
 
 export default function RestaurantMenuPage() {
-  console.log('Component mounted'); // 🔍 Check this shows in your console
-
   const { id } = useParams();
-  console.log('Restaurant ID:', id);
 
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -48,22 +48,22 @@ export default function RestaurantMenuPage() {
   useEffect(() => {
     fetchCategories();
     fetchMenuItems();
-    console.log('Fetching data...');
   }, []);
 
   const fetchCategories = async () => {
     const snap = await getDocs(collection(db, 'restaurants', id, 'categories'));
     const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    console.log('Categories:', data); // 👈 check this
     setCategories(data);
   };
 
   const fetchMenuItems = async () => {
-    const snap = await getDocs(collection(db, 'restaurants', id, 'menu'));
+    const q = query(collection(db, 'restaurants', id, 'menu'), orderBy('sortOrder'));
+    const snap = await getDocs(q);
 
     const data = await Promise.all(
       snap.docs.map(async (docSnap) => {
         const item = { id: docSnap.id, ...docSnap.data() };
+        item.sortOrder = typeof item.sortOrder === 'number' ? item.sortOrder : 0;
 
         // ✅ Force addons from subcollection only
         const addonsSnap = await getDocs(collection(db, 'restaurants', id, 'menu', docSnap.id, 'addons'));
@@ -73,6 +73,7 @@ export default function RestaurantMenuPage() {
       })
     );
 
+    data.sort((a, b) => a.sortOrder - b.sortOrder);
     setMenuItems(data);
   };
 
@@ -122,7 +123,8 @@ export default function RestaurantMenuPage() {
   imageUrl,
   isCombo: newItem.isCombo || false,
   comboPrice: newItem.comboPrice ? parseFloat(newItem.comboPrice) : null,
-  comboIncludes: newItem.comboIncludes || ''
+  comboIncludes: newItem.comboIncludes || '',
+  sortOrder: menuItems.length
 });
 
     // 2. Add each addon to the subcollection
@@ -151,6 +153,19 @@ export default function RestaurantMenuPage() {
   const deleteMenuItem = async (itemId) => {
     await deleteDoc(doc(db, 'restaurants', id, 'menu', itemId));
     fetchMenuItems();
+  };
+
+  const handleReorder = async (items) => {
+    setMenuItems(items);
+    await Promise.all(
+      items.map((item, index) => {
+        if (item.sortOrder !== index) {
+          item.sortOrder = index;
+          return updateDoc(doc(db, 'restaurants', id, 'menu', item.id), { sortOrder: index });
+        }
+        return null;
+      })
+    );
   };
 
   const handleUpdateItem = async (e) => {
@@ -282,6 +297,24 @@ export default function RestaurantMenuPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Reorder Menu Items */}
+          <div className="bg-white rounded-lg shadow overflow-hidden mt-6">
+            <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">Reorder Items</h3>
+            </div>
+            <div className="p-4">
+              <SortableMenuList
+                items={menuItems}
+                onReorder={handleReorder}
+                renderItem={(item) => (
+                  <div className="p-2 border rounded bg-gray-50 mb-2 cursor-move">
+                    {item.name}
+                  </div>
+                )}
+              />
             </div>
           </div>
 

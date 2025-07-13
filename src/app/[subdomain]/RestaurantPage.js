@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
-import { collection, getDocs, getDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
@@ -60,9 +60,11 @@ if (restaurantData.isActive === false) {
         const cats = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCategories(cats);
 
-        const menuSnapshot = await getDocs(
-          collection(db, 'restaurants', restaurantId, 'menu')
+        const menuQuery = query(
+          collection(db, 'restaurants', restaurantId, 'menu'),
+          orderBy('sortOrder')
         );
+        const menuSnapshot = await getDocs(menuQuery);
 
         const itemsWithAddons = await Promise.all(menuSnapshot.docs.map(async doc => {
           const addonsSnapshot = await getDocs(
@@ -80,6 +82,7 @@ if (restaurantData.isActive === false) {
           };
         }));
 
+        itemsWithAddons.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
         setMenuItems(itemsWithAddons);
 
         const branchesSnapshot = await getDocs(
