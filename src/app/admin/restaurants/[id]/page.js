@@ -161,17 +161,53 @@ export default function RestaurantMenuPage() {
     fetchMenuItems();
   };
 
-  const handleReorder = async (items) => {
-    setMenuItems(items);
-    await Promise.all(
-      items.map((item, index) => {
-        if (item.sortOrder !== index) {
-          item.sortOrder = index;
-          return updateDoc(doc(db, 'restaurants', id, 'menu', item.id), { sortOrder: index });
-        }
-        return null;
-      })
-    );
+  const handleReorder = async (reordered) => {
+    // If a category filter is applied, only reorder items within that category
+    if (selectedCategoryId) {
+      // Map indices of the items belonging to the selected category
+      const categoryIndices = menuItems
+        .map((item, idx) => ({ item, idx }))
+        .filter(({ item }) => item.typeId === selectedCategoryId)
+        .map(({ idx }) => idx);
+
+      // Create a copy of the full menu
+      const updatedMenu = [...menuItems];
+
+      // Replace items in their original positions with the reordered ones
+      categoryIndices.forEach((menuIdx, i) => {
+        updatedMenu[menuIdx] = reordered[i];
+      });
+
+      // Update sortOrder for the entire menu
+      await Promise.all(
+        updatedMenu.map((item, index) => {
+          if (item.sortOrder !== index) {
+            item.sortOrder = index;
+            return updateDoc(doc(db, 'restaurants', id, 'menu', item.id), {
+              sortOrder: index
+            });
+          }
+          return null;
+        })
+      );
+
+      setMenuItems(updatedMenu);
+    } else {
+      // No filter applied, reorder the whole list
+      await Promise.all(
+        reordered.map((item, index) => {
+          if (item.sortOrder !== index) {
+            item.sortOrder = index;
+            return updateDoc(doc(db, 'restaurants', id, 'menu', item.id), {
+              sortOrder: index
+            });
+          }
+          return null;
+        })
+      );
+
+      setMenuItems(reordered);
+    }
   };
 
   const handleUpdateItem = async (e) => {
