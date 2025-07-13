@@ -90,6 +90,7 @@ if (restaurantData.isActive === false) {
         );
 
         itemsWithAddons.sort((a, b) => a.sortOrder - b.sortOrder);
+
         setMenuItems(itemsWithAddons);
 
         const branchesSnapshot = await getDocs(

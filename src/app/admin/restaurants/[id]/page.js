@@ -68,6 +68,7 @@ export default function RestaurantMenuPage() {
             ? item.sortOrder
             : parseInt(item.sortOrder, 10) || index;
 
+
         // ✅ Force addons from subcollection only
         const addonsSnap = await getDocs(collection(db, 'restaurants', id, 'menu', docSnap.id, 'addons'));
         item.addons = addonsSnap.docs.map(doc => doc.data());
