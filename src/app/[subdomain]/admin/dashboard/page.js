@@ -65,6 +65,10 @@ export default function DashboardPage() {
             if (!querySnapshot.empty) {
                 const restaurantDoc = querySnapshot.docs[0];
                 const restaurantId = restaurantDoc.id;
+                const branchId =
+                    typeof window !== 'undefined'
+                        ? localStorage.getItem('branchId')
+                        : null;
 
                 setRestaurantData({
                     id: restaurantId,
@@ -74,11 +78,18 @@ export default function DashboardPage() {
 
                 // Try to fetch orders with the composite query
                 try {
-                    const ordersQuery = query(
-                        collection(db, 'orders'),
-                        where('restaurantId', '==', restaurantId),
-                        orderBy('createdAt', 'desc')
-                    );
+                    const ordersQuery = branchId
+                        ? query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              where('branchId', '==', branchId),
+                              orderBy('createdAt', 'desc')
+                          )
+                        : query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              orderBy('createdAt', 'desc')
+                          );
                     const ordersSnapshot = await getDocs(ordersQuery);
                     const orders = ordersSnapshot.docs.map(doc => {
                         const data = doc.data();
@@ -110,10 +121,16 @@ export default function DashboardPage() {
                         setIndexError(true);
                     }
                     // Fallback: fetch without ordering
-                    const fallbackQuery = query(
-                        collection(db, 'orders'),
-                        where('restaurantId', '==', restaurantId)
-                    );
+                    const fallbackQuery = branchId
+                        ? query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              where('branchId', '==', branchId)
+                          )
+                        : query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId)
+                          );
                     const fallbackSnapshot = await getDocs(fallbackQuery);
                     const fallbackOrders = fallbackSnapshot.docs.map(doc => ({
                         id: doc.id,
