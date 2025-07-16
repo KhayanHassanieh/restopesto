@@ -32,6 +32,8 @@ export default function UserLoginPage() {
       if (!snapshot.empty) {
         const userDoc = snapshot.docs[0];
         restaurantId = userDoc.data().restaurantId;
+        // Ensure no stale branch access when logging in as a restaurant user
+        localStorage.removeItem('branchId');
       } else {
         snapshot = await getDocs(
           query(collection(db, 'branchUsers'), where('uid', '==', user.uid))
