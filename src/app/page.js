@@ -163,26 +163,26 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">1</div>
-                <h3 className="text-xl font-bold mb-3">Customize Your Menu</h3>
+                <img src='/UI/1st_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <h3 className="text-xl font-bold mb-3">Customer Selects Items</h3>
                 <p className="text-gray-600">
-                  Upload your menu items, set prices, and customize the design to match your brand.
+                  A seamless, mobile-friendly menu for easy item selection.
                 </p>
               </div>
               
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">2</div>
-                <h3 className="text-xl font-bold mb-3">Generate QR Codes</h3>
+                <img src='/UI/2nd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <h3 className="text-xl font-bold mb-3">Shareable Cart with Friends</h3>
                 <p className="text-gray-600">
-                  We create unique QR codes for your restaurant that you can print or display anywhere.
-                </p>
+                 Group ordering made easy — more items, more value.
+                 </p>
               </div>
               
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">3</div>
-                <h3 className="text-xl font-bold mb-3">Start Receiving Orders</h3>
+                <img src='/UI/3rd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+               <h3 className="text-xl font-bold mb-3">Ordering Directly via WhatsApp</h3>
                 <p className="text-gray-600">
-                  Customers scan, browse, and order - you get instant notifications and detailed analytics.
+                No apps, no delays — orders sent instantly to your team.
                 </p>
               </div>
             </div>
