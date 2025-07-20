@@ -15,6 +15,7 @@ import {
 import { db } from '@/firebase/firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import SortableMenuList from '@/components/SortableMenuList';
+import { GripVertical } from 'lucide-react';
 
 export default function RestaurantMenuPage() {
   const { id } = useParams();
@@ -353,8 +354,14 @@ export default function RestaurantMenuPage() {
                   (item) => selectedCategoryId === '' || item.typeId === selectedCategoryId
                 )}
                 onReorder={handleReorder}
-                renderItem={(item) => (
-                  <div className="p-2 border rounded bg-gray-50 mb-2 cursor-move">
+                renderItem={(item, handleProps) => (
+                  <div className="p-2 border rounded bg-gray-50 mb-2 flex items-center">
+                    <span
+                      className="cursor-grab mr-2 text-gray-500"
+                      {...handleProps}
+                    >
+                      <GripVertical size={16} />
+                    </span>
                     {item.name}
                   </div>
                 )}
@@ -586,9 +593,15 @@ export default function RestaurantMenuPage() {
             <SortableMenuList
               items={menuItems.filter(item => selectedCategoryId === '' || item.typeId === selectedCategoryId)}
               onReorder={handleReorder}
-              renderItem={(item) => (
-                <div className="p-4">
-                  <div className="flex gap-4">
+              renderItem={(item, handleProps) => (
+                <div className="p-4 flex">
+                  <div
+                    className="mr-4 flex items-center cursor-grab text-gray-500"
+                    {...handleProps}
+                  >
+                    <GripVertical size={20} />
+                  </div>
+                  <div className="flex gap-4 flex-1">
                     {item.imageUrl && (
                       <div className="flex-shrink-0">
                         <img
@@ -598,7 +611,6 @@ export default function RestaurantMenuPage() {
                           />
                         </div>
                       )}
-
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <h4 className="text-lg font-semibold text-gray-900">{item.name}</h4>
