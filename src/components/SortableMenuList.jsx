@@ -4,16 +4,17 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-function SortableItem({ id, children }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+function SortableItem({ id, render }) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {render({ attributes, listeners })}
     </div>
   );
 }
@@ -41,9 +42,11 @@ export default function SortableMenuList({ items, renderItem, onReorder }) {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ordered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         {ordered.map((item) => (
-          <SortableItem key={item.id} id={item.id}>
-            {renderItem(item)}
-          </SortableItem>
+          <SortableItem
+            key={item.id}
+            id={item.id}
+            render={(handleProps) => renderItem(item, handleProps)}
+          />
         ))}
       </SortableContext>
     </DndContext>
