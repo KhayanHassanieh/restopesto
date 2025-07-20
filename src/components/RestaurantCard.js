@@ -59,6 +59,7 @@ export default function RestaurantCard({
       ...(editFacebookURL && { facebookURL: editFacebookURL }),
       backgroundImageFile: editBackgroundImageFile,
       logoFile: editLogoFile,
+
       theme: {
         primaryColor,
         backgroundColor,
@@ -305,6 +306,7 @@ export default function RestaurantCard({
                 Background Image
               </label>
 
+
               {/* Current background image preview */}
               {restaurant.backgroundImageUrl && !previewBackgroundImage && (
                 <div className="mt-2 mb-4">
@@ -397,6 +399,7 @@ export default function RestaurantCard({
             <div>
               <label htmlFor="expiresAt" className="block text-sm font-medium text-gray-700">Expiration Date</label>
               <input
+
                 id="expiresAt"
                 type="date"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"

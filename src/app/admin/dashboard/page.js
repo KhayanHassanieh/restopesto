@@ -36,6 +36,7 @@ function DashboardPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editOpeningHours, setEditOpeningHours] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +45,7 @@ function DashboardPage() {
   const [editInstagramURL, setEditInstagramURL] = useState('');
   const [editTiktokURL, setEditTiktokURL] = useState('');
   const [editFacebookURL, setEditFacebookURL] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#7b68ee');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
@@ -148,6 +150,7 @@ function DashboardPage() {
         tiktokURL,
         facebookURL,
         subscriptionDate: new Date(),
+
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: true,
         logoUrl: uploadedLogoUrl,
@@ -181,6 +184,7 @@ function DashboardPage() {
       setFacebookURL('');
       setUsername('');
       setPassword('');
+
       setLogoFile(null);
       setBackgroundImageFile(null);
       setIsAdding(false);
@@ -220,6 +224,7 @@ function DashboardPage() {
       setEditInstagramURL(restaurant.instagramURL || '');
       setEditTiktokURL(restaurant.tiktokURL || '');
       setEditFacebookURL(restaurant.facebookURL || '');
+
   
       let dateValue = '';
       if (restaurant.expiresAt) {
@@ -286,6 +291,7 @@ function DashboardPage() {
         ...(bgImageUrl && { backgroundImageUrl: bgImageUrl }),
         ...(logoUrl && { logoUrl }),
         theme: {
+
           primaryColor,
           backgroundColor,
           accentColor,
@@ -524,6 +530,7 @@ function DashboardPage() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username <span className="text-red-500">*</span>
               </label>
+
                   <input
                     type="text"
                     name="username"
@@ -588,6 +595,7 @@ function DashboardPage() {
 
                 {/* Primary Color */}
                 <div className="sm:col-span-2 relative">
+
                   <label className="block text-sm font-medium text-gray-700">Primary Color</label>
                   <div className="flex items-center space-x-2 mt-1">
                     <input
@@ -778,6 +786,7 @@ function DashboardPage() {
                     onUpdate={handleUpdateRestaurant}
                     onToggleActive={handleToggleActive}
 
+
                     primaryColor={primaryColor}
                     setPrimaryColor={setPrimaryColor}
                     backgroundColor={backgroundColor}
@@ -791,6 +800,7 @@ function DashboardPage() {
                     editTiktokURL={editTiktokURL}
                     editFacebookURL={editFacebookURL}
                   />
+
                 </div>
               ))
             )}

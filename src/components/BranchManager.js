@@ -8,6 +8,7 @@ import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 export default function BranchManager({ restaurantId, visible }) {
   const [branches, setBranches] = useState([]);
   const [newBranch, setNewBranch] = useState({ name: '', phone: '',location:'' , city: '', areas: '', username:'', password:''  });
+
   const [editingBranch, setEditingBranch] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -58,6 +59,7 @@ export default function BranchManager({ restaurantId, visible }) {
       areas: newBranch.areas.split(',').map(a => a.trim())
     });
 
+
     await addDoc(collection(db, 'branchUsers'), {
       uid: user.uid,
       restaurantId,
@@ -69,6 +71,7 @@ export default function BranchManager({ restaurantId, visible }) {
     await signOut(secondaryAuth);
 
     setNewBranch({ name: '', phone: '',location:'' , city: '', areas: '', username:'', password:'' });
+
     setIsAdding(false);
 
     const snap = await getDocs(branchRef);
@@ -123,6 +126,7 @@ export default function BranchManager({ restaurantId, visible }) {
       username: updatedBranch.username,
       areas: updatedBranch.areas
   });
+
 
     const userSnap = await getDocs(
       query(collection(db, 'branchUsers'), where('branchId', '==', updatedBranch.id))
