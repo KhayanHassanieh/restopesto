@@ -334,6 +334,7 @@ export default function RestaurantMenuPage() {
             <div className="px-4 py-4 border-b border-gray-200 sm:px-6">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                 <h3 className="text-lg font-medium leading-6 text-gray-900">Menu Items</h3>
+
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="inline-flex items-center justify-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6]"
@@ -343,6 +344,7 @@ export default function RestaurantMenuPage() {
               </div>
             </div>
             {/* Add item modal component handled below */}
+
 
             {/* Category Filter */}
             <div className="p-4 border-b border-gray-200">
@@ -445,7 +447,7 @@ export default function RestaurantMenuPage() {
                     </button>
                   </div>
 
-                  {/* Edit form handled via modal below */}
+
                 </div>
               )}
             />
