@@ -12,6 +12,7 @@ export default function RestaurantCard({
   editSubdomain,
   editPhone,
   editOpeningHours,
+
   editExpiresAt,
   onToggleBranches,
   editUsername,
@@ -51,6 +52,7 @@ export default function RestaurantCard({
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
       ...(editOpeningHours && { openingHours: editOpeningHours }),
+
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
       ...(editUsername && { username: editUsername }),
       ...(editPassword && { password: editPassword }),

@@ -26,6 +26,7 @@ function DashboardPage() {
   const [subdomain, setSubdomain] = useState('');
   const [phone, setPhone] = useState('');
   const [openingHours, setOpeningHours] = useState('');
+
   const [instagramURL, setInstagramURL] = useState('');
   const [tiktokURL, setTiktokURL] = useState('');
   const [facebookURL, setFacebookURL] = useState('');
@@ -36,6 +37,7 @@ function DashboardPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editOpeningHours, setEditOpeningHours] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -217,6 +219,7 @@ function DashboardPage() {
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
       setEditOpeningHours(restaurant.openingHours || '');
+
       setEditInstagramURL(restaurant.instagramURL || '');
       setEditTiktokURL(restaurant.tiktokURL || '');
       setEditFacebookURL(restaurant.facebookURL || '');
@@ -279,6 +282,7 @@ function DashboardPage() {
         subdomain: updatedData.subdomain || editSubdomain,
         phone: updatedData.phone || editPhone,
         openingHours: updatedData.openingHours || editOpeningHours,
+
         instagramURL: updatedData.instagramURL || editInstagramURL,
         tiktokURL: updatedData.tiktokURL || editTiktokURL,
         facebookURL: updatedData.facebookURL || editFacebookURL,
@@ -768,6 +772,7 @@ function DashboardPage() {
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
                       openingHours: setEditOpeningHours,
+
                       expiresAt: setEditExpiresAt,
                       username: setEditUsername,
                       password: setEditPassword,
@@ -787,6 +792,7 @@ function DashboardPage() {
                     editUsername={editUsername}
                     editPassword={editPassword}
                     editOpeningHours={editOpeningHours}
+
                     editInstagramURL={editInstagramURL}
                     editTiktokURL={editTiktokURL}
                     editFacebookURL={editFacebookURL}
