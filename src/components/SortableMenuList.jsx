@@ -13,8 +13,8 @@ function SortableItem({ id, render }) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
-      {render({ attributes, listeners })}
+    <div ref={setNodeRef} style={style}>
+      {render({ ...attributes, ...listeners })}
     </div>
   );
 }
