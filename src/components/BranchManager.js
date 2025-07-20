@@ -7,7 +7,8 @@ import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 
 export default function BranchManager({ restaurantId, visible }) {
   const [branches, setBranches] = useState([]);
-  const [newBranch, setNewBranch] = useState({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '', username:'', password:''  });
+  const [newBranch, setNewBranch] = useState({ name: '', phone: '',location:'' , city: '', areas: '', username:'', password:''  });
+
   const [editingBranch, setEditingBranch] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -52,9 +53,9 @@ export default function BranchManager({ restaurantId, visible }) {
     const docRef = await addDoc(branchRef, {
       name: newBranch.name,
       phone: newBranch.phone,
-      openingHours: newBranch.openingHours,
       location: newBranch.location,
       city: newBranch.city,
+
       username: email,
       areas: newBranch.areas.split(',').map(a => a.trim())
     });
@@ -69,7 +70,8 @@ export default function BranchManager({ restaurantId, visible }) {
 
     await signOut(secondaryAuth);
 
-    setNewBranch({ name: '', phone: '',openingHours:'',location:'' , city: '', areas: '', username:'', password:'' });
+    setNewBranch({ name: '', phone: '',location:'' , city: '', areas: '', username:'', password:'' });
+
     setIsAdding(false);
 
     const snap = await getDocs(branchRef);
@@ -119,9 +121,9 @@ export default function BranchManager({ restaurantId, visible }) {
   await updateDoc(branchRef, {
       name: updatedBranch.name,
       phone: updatedBranch.phone,
-      openingHours: updatedBranch.openingHours,
       location: updatedBranch.location,
       city: updatedBranch.city,
+
       username: updatedBranch.username,
       areas: updatedBranch.areas
   });
@@ -296,15 +298,6 @@ export default function BranchManager({ restaurantId, visible }) {
                     />
                   </div>
                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-                      value={editingBranch.openingHours}
-                      onChange={(e) => setEditingBranch({ ...editingBranch, openingHours: e.target.value })}
-                    />
-                  </div>
-                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                     <input
                       type="text"
@@ -397,17 +390,6 @@ export default function BranchManager({ restaurantId, visible }) {
                 value={newBranch.areas}
                 onChange={(e) => setNewBranch({ ...newBranch, areas: e.target.value })}
               />
-            </div>
-             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Opening Hours</label>
-              <input
-                type="text"
-                placeholder="9:00 AM - 12:00 PM"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-                value={newBranch.openingHours}
-                onChange={(e) => setNewBranch({ ...newBranch, openingHours: e.target.value })}
-              />
-              
             </div>
              <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>

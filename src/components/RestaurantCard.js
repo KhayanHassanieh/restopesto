@@ -11,6 +11,8 @@ export default function RestaurantCard({
   editName,
   editSubdomain,
   editPhone,
+  editOpeningHours,
+
   editExpiresAt,
   onToggleBranches,
   editUsername,
@@ -49,6 +51,8 @@ export default function RestaurantCard({
       ...(editName && { name: editName }),
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
+      ...(editOpeningHours && { openingHours: editOpeningHours }),
+
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
       ...(editUsername && { username: editUsername }),
       ...(editPassword && { password: editPassword }),
@@ -287,6 +291,15 @@ export default function RestaurantCard({
                 placeholder="+1234567890"
                 value={editPhone ?? ''}
                 onChange={(e) => onEditChange.phone(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
+              <input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editOpeningHours ?? ''}
+                onChange={(e) => onEditChange.openingHours(e.target.value)}
               />
             </div>
             <div>

@@ -25,6 +25,8 @@ function DashboardPage() {
   const [name, setName] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [phone, setPhone] = useState('');
+  const [openingHours, setOpeningHours] = useState('');
+
   const [instagramURL, setInstagramURL] = useState('');
   const [tiktokURL, setTiktokURL] = useState('');
   const [facebookURL, setFacebookURL] = useState('');
@@ -33,7 +35,9 @@ function DashboardPage() {
   const [editName, setEditName] = useState('');
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editOpeningHours, setEditOpeningHours] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -141,6 +145,7 @@ function DashboardPage() {
         name,
         subdomain,
         phone,
+        openingHours,
         instagramURL,
         tiktokURL,
         facebookURL,
@@ -172,6 +177,7 @@ function DashboardPage() {
       setName('');
       setSubdomain('');
       setPhone('');
+      setOpeningHours('');
       setInstagramURL('');
       setTiktokURL('');
       setFacebookURL('');
@@ -212,6 +218,8 @@ function DashboardPage() {
       setEditName(restaurant.name);
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
+      setEditOpeningHours(restaurant.openingHours || '');
+
       setEditInstagramURL(restaurant.instagramURL || '');
       setEditTiktokURL(restaurant.tiktokURL || '');
       setEditFacebookURL(restaurant.facebookURL || '');
@@ -273,6 +281,8 @@ function DashboardPage() {
         name: updatedData.name || editName,
         subdomain: updatedData.subdomain || editSubdomain,
         phone: updatedData.phone || editPhone,
+        openingHours: updatedData.openingHours || editOpeningHours,
+
         instagramURL: updatedData.instagramURL || editInstagramURL,
         tiktokURL: updatedData.tiktokURL || editTiktokURL,
         facebookURL: updatedData.facebookURL || editFacebookURL,
@@ -497,16 +507,27 @@ function DashboardPage() {
                     type="text"
                     name="phone"
                     id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800 placeholder-gray-400"
-                    placeholder="+1234567890"
-                  />
-                </div>
-                <div className="sm:col-span-3">
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                    Username <span className="text-red-500">*</span>
-                  </label>
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800 placeholder-gray-400"
+                placeholder="+1234567890"
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <label htmlFor="openingHours" className="block text-sm font-medium text-gray-700">Opening Hours</label>
+              <input
+                type="text"
+                name="openingHours"
+                id="openingHours"
+                value={openingHours}
+                onChange={(e) => setOpeningHours(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username <span className="text-red-500">*</span>
+              </label>
                   <input
                     type="text"
                     name="username"
@@ -750,6 +771,8 @@ function DashboardPage() {
                       name: setEditName,
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
+                      openingHours: setEditOpeningHours,
+
                       expiresAt: setEditExpiresAt,
                       username: setEditUsername,
                       password: setEditPassword,
@@ -768,6 +791,8 @@ function DashboardPage() {
                     setAccentColor={setAccentColor}
                     editUsername={editUsername}
                     editPassword={editPassword}
+                    editOpeningHours={editOpeningHours}
+
                     editInstagramURL={editInstagramURL}
                     editTiktokURL={editTiktokURL}
                     editFacebookURL={editFacebookURL}
