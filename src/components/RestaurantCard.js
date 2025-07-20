@@ -11,10 +11,14 @@ export default function RestaurantCard({
   editName,
   editSubdomain,
   editPhone,
+  editOpeningHours,
   editExpiresAt,
   onToggleBranches,
   editUsername,
   editPassword,
+  editInstagramURL,
+  editTiktokURL,
+  editFacebookURL,
   onToggleEdit,
   onEditChange,
   onUpdate,
@@ -46,9 +50,13 @@ export default function RestaurantCard({
       ...(editName && { name: editName }),
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
+      ...(editOpeningHours && { openingHours: editOpeningHours }),
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
       ...(editUsername && { username: editUsername }),
       ...(editPassword && { password: editPassword }),
+      ...(editInstagramURL && { instagramURL: editInstagramURL }),
+      ...(editTiktokURL && { tiktokURL: editTiktokURL }),
+      ...(editFacebookURL && { facebookURL: editFacebookURL }),
       backgroundImageFile: editBackgroundImageFile,
       logoFile: editLogoFile,
       theme: {
@@ -284,6 +292,15 @@ export default function RestaurantCard({
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
+              <input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editOpeningHours ?? ''}
+                onChange={(e) => onEditChange.openingHours(e.target.value)}
+              />
+            </div>
+            <div>
               <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">
                 Background Image
               </label>
@@ -344,6 +361,36 @@ export default function RestaurantCard({
                 placeholder="••••••••"
                 value={editPassword}
                 onChange={(e) => onEditChange.password(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Instagram Page</label>
+              <input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editInstagramURL}
+                onChange={(e) => onEditChange.instagramURL(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Tiktok Page</label>
+              <input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editTiktokURL}
+                onChange={(e) => onEditChange.tiktokURL(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Facebook Page</label>
+              <input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
+                value={editFacebookURL}
+                onChange={(e) => onEditChange.facebookURL(e.target.value)}
               />
             </div>
 
