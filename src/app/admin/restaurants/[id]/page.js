@@ -298,7 +298,7 @@ export default function RestaurantMenuPage() {
               <h3 className="text-lg font-medium leading-6 text-gray-900">Categories</h3>
             </div>
             <div className="p-4">
-              <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <div className="flex flex-col md:flex-row gap-2 mb-4">
                 <input
                   type="text"
                   value={newCategory}
@@ -330,7 +330,7 @@ export default function RestaurantMenuPage() {
           {/* Add Menu Item Section */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-4 py-4 border-b border-gray-200 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
                 <h3 className="text-lg font-medium leading-6 text-gray-900">Menu Items</h3>
                 <button
                   onClick={() => setIsAddingItem(!isAddingItem)}
@@ -350,7 +350,7 @@ export default function RestaurantMenuPage() {
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
                 />
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
                     <input
@@ -407,7 +407,7 @@ export default function RestaurantMenuPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Add-ons</label>
                     <div className="space-y-2">
@@ -433,7 +433,7 @@ export default function RestaurantMenuPage() {
                               updated[index].price = parseFloat(e.target.value) || 0;
                               setNewItem({ ...newItem, addons: updated });
                             }}
-                            className="w-20 rounded-md border-gray-300 p-2 text-sm text-gray-800"
+                            className="w-20 md:w-24 rounded-md border-gray-300 p-2 text-sm text-gray-800"
                           />
                           <button
                             type="button"
@@ -544,7 +544,7 @@ export default function RestaurantMenuPage() {
               items={menuItems.filter(item => selectedCategoryId === '' || item.typeId === selectedCategoryId)}
               onReorder={handleReorder}
               renderItem={(item, handleProps) => (
-                <div className="p-4 flex flex-col sm:flex-row gap-4">
+                <div className="p-4 flex flex-col md:flex-row gap-4">
                   <div
                     className="flex items-center cursor-grab text-gray-500 sm:self-start"
                     {...handleProps}
@@ -552,19 +552,19 @@ export default function RestaurantMenuPage() {
                     <GripVertical size={20} />
                   </div>
                   
-                  <div className="flex-1 flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 flex flex-col md:flex-row gap-4">
                     {item.imageUrl && (
                       <div className="flex-shrink-0">
                         <img
                           src={item.imageUrl}
                           alt={item.name}
-                          className="h-20 w-20 rounded-lg object-cover border border-gray-200"
+                          className="h-20 w-20 md:h-24 md:w-24 rounded-lg object-cover border border-gray-200"
                         />
                       </div>
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                         <h4 className="text-base sm:text-lg font-semibold text-gray-900">{item.name}</h4>
                         <span className="text-base sm:text-lg font-medium text-gray-900">${item.price}</span>
                       </div>
@@ -604,7 +604,7 @@ export default function RestaurantMenuPage() {
                     </div>
                   </div>
 
-                  <div className="flex sm:flex-col gap-2 sm:gap-1 justify-end">
+                  <div className="flex gap-2 md:flex-col md:gap-1 justify-end">
                    <button
   onClick={() => startEdit(item)}
   className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-[#7b68ee] hover:bg-[#6a58d6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
@@ -629,7 +629,7 @@ export default function RestaurantMenuPage() {
                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#7b68ee] file:text-white hover:file:bg-[#6a58d6]"
                       />
 
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">Name</label>
                           <input
@@ -686,7 +686,7 @@ export default function RestaurantMenuPage() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <label htmlFor="edit-addons" className="block text-sm font-medium text-gray-700">Add-ons</label>
                           <div className="space-y-2">
@@ -712,7 +712,7 @@ export default function RestaurantMenuPage() {
                                     updated[index].price = parseFloat(e.target.value);
                                     setEditItem({ ...editItem, addons: updated });
                                   }}
-                                  className="w-20 rounded-md border-gray-300 p-2 text-sm text-gray-800"
+                                  className="w-20 md:w-24 rounded-md border-gray-300 p-2 text-sm text-gray-800"
                                 />
                                 <button
                                   type="button"
@@ -788,7 +788,7 @@ export default function RestaurantMenuPage() {
                         )}
                       </div>
 
-                      <div className="flex flex-col sm:flex-row justify-end gap-2">
+                      <div className="flex flex-col md:flex-row justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setEditMode(null)}
