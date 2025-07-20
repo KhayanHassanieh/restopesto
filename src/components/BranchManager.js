@@ -55,10 +55,10 @@ export default function BranchManager({ restaurantId, visible }) {
       phone: newBranch.phone,
       location: newBranch.location,
       city: newBranch.city,
-
       username: email,
       areas: newBranch.areas.split(',').map(a => a.trim())
     });
+
 
     await addDoc(collection(db, 'branchUsers'), {
       uid: user.uid,
@@ -123,10 +123,10 @@ export default function BranchManager({ restaurantId, visible }) {
       phone: updatedBranch.phone,
       location: updatedBranch.location,
       city: updatedBranch.city,
-
       username: updatedBranch.username,
       areas: updatedBranch.areas
   });
+
 
     const userSnap = await getDocs(
       query(collection(db, 'branchUsers'), where('branchId', '==', updatedBranch.id))
