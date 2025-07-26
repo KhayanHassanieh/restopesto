@@ -966,6 +966,7 @@ const filteredMenuItems = searchTerm
                   try {
                     const finalOrderData = { ...orderData, orderNote };
                     const orderRef = await createOrder(finalOrderData);
+                    const trackUrl = `${window.location.origin}/${subdomain}/order/${orderRef.id}`;
 
                     // Clear cart locally + remotely
                     setCart([]);
@@ -997,6 +998,8 @@ const filteredMenuItems = searchTerm
                         const note = item.instructions ? `   *Note:* ${item.instructions}` : '';
                         return [line, addons, removables, note].filter(Boolean).join('\n');
                       }),
+                      '',
+                      `Track: ${trackUrl}`,
                       '',
                       `Total: $${finalOrderData.total.toFixed(2)}`
                     ];

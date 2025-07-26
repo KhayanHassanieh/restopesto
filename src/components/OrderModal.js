@@ -23,6 +23,25 @@ export default function OrderModal({
     const [newAddon, setNewAddon] = useState({ name: '', price: 0 });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const modalRef = useRef();
+    const handleShare = () => {
+        if (!formData?.id) return;
+        let sub;
+        if (typeof window !== 'undefined') {
+            if (window.location.hostname.includes('localhost')) {
+                const parts = window.location.pathname.split('/');
+                sub = parts[1];
+            } else {
+                sub = window.location.hostname.split('.')[0];
+            }
+        }
+        const url = `${window.location.origin}/${sub}/order/${formData.id}`;
+        if (navigator.share) {
+            navigator.share({ url }).catch(console.error);
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url);
+            alert('Link copied to clipboard');
+        }
+    };
 
     // Close modal when clicking outside
     useEffect(() => {
@@ -216,6 +235,18 @@ export default function OrderModal({
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">Order ID: {formData.id}</p>
                     </div>
+                    {mode === 'view' && (
+                        <button
+                            onClick={handleShare}
+                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer mr-2"
+                            aria-label="Share order"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM19 9v6a2 2 0 01-2 2H7a2 2 0 01-2-2V9" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 15l5 5 5-5" />
+                            </svg>
+                        </button>
+                    )}
                     <button
                         onClick={onClose}
                         className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
