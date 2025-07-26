@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import OrderModal from './OrderModal';
 
+const STATUSES = [
+  'Ordered',
+  'Confirmed',
+  'In Progress',
+  'Out for Delivery',
+  'Done'
+];
+
 export default function RecentOrders({ orders = [], showAll = false, onOrderUpdate }) {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // 'view' or 'edit'
@@ -14,6 +22,10 @@ export default function RecentOrders({ orders = [], showAll = false, onOrderUpda
   const handleEditClick = (order) => {
     setCurrentOrder(order);
     setModalMode('edit');
+  };
+
+  const handleStatusChange = async (orderId, value) => {
+    await onOrderUpdate(orderId, { status: value });
   };
 
   const handleSave = async (orderId, updatedData) => {
@@ -65,15 +77,17 @@ export default function RecentOrders({ orders = [], showAll = false, onOrderUpda
                 ${order.finalTotal?.toFixed(2) || '0.00'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  order.status === 'completed' 
-                    ? 'bg-green-100 text-green-800' 
-                    : order.status === 'cancelled'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {order.status || 'Pending'}
-                </span>
+                <select
+                  className="border border-gray-300 rounded-md text-sm p-1"
+                  value={order.status || 'Ordered'}
+                  onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                >
+                  {STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
               </td>
               <td className="px-6 py-4 whitespace-nowrap space-x-2">
                 <button 
