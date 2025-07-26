@@ -41,7 +41,8 @@ export default function OrderModal({
                     addonsTotal: Number(item.addonsTotal) || 0,
                     quantity: Number(item.quantity) || 1,
                     selectedAddons: Array.isArray(item.selectedAddons) ? item.selectedAddons : [],
-                    selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : []
+                    selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : [],
+                    instructions: item.instructions || ''
                 })),
                 addressDetails: originalOrder.addressDetails || '',
                 area: originalOrder.area || '',
@@ -312,6 +313,28 @@ export default function OrderModal({
                         </div>
                     </div>
 
+                    {/* Order Note */}
+                    <div className="mb-8 bg-gray-50 p-6 rounded-lg border border-gray-100">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20h9" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.5 3a2.121 2.121 0 113 3L7 18l-4 1 1-4 12.5-12.5z" />
+                            </svg>
+                            Order Note
+                        </h3>
+                        {mode === 'view' ? (
+                            <p className="text-gray-900 bg-white p-2 rounded border border-transparent min-h-[60px]">{formData.orderNote || 'N/A'}</p>
+                        ) : (
+                            <textarea
+                                name="orderNote"
+                                value={formData.orderNote}
+                                onChange={handleChange}
+                                rows={3}
+                                className="text-black w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition cursor-text font-medium"
+                            />
+                        )}
+                    </div>
+
                     {/* Order Items Section */}
                     <div className="mb-8">
                         <div className="flex justify-between items-center mb-4">
@@ -489,6 +512,25 @@ export default function OrderModal({
                                                                     )}
                                                                 </div>
                                                             ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Instructions */}
+                                                    {mode === 'view' ? (
+                                                        item.instructions && (
+                                                            <div className="mt-2 text-xs text-gray-600">
+                                                                Note: {item.instructions}
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <div className="mt-2">
+                                                            <textarea
+                                                                value={item.instructions}
+                                                                onChange={(e) => handleItemChange(itemIndex, 'instructions', e.target.value)}
+                                                                className="w-full p-1 border border-gray-300 rounded-md text-xs focus:ring-blue-500 focus:border-blue-500"
+                                                                rows={2}
+                                                                placeholder="Special instructions"
+                                                            />
                                                         </div>
                                                     )}
 

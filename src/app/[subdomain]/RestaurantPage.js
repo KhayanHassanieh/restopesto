@@ -22,6 +22,7 @@ export default function RestaurantPage({ subdomain }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [selectedRemovables, setSelectedRemovables] = useState([]);
+  const [instructions, setInstructions] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isComboSelected, setIsComboSelected] = useState(false);
@@ -35,6 +36,7 @@ export default function RestaurantPage({ subdomain }) {
   const [location, setLocation] = useState(null);
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderNote, setOrderNote] = useState('');
 
   const router = useRouter();
 
@@ -178,7 +180,8 @@ if (restaurantData.isActive === false) {
     selectedAddons = [],
     selectedRemovables = [],
     quantity = 1,
-    isComboSelected = false
+    isComboSelected = false,
+    customInstructions = ''
   ) => {
     if (!isRestaurantOpen(restaurant?.openingHours)) {
       alert('The restaurant is currently closed.');
@@ -216,6 +219,7 @@ if (restaurantData.isActive === false) {
       finalTotal,
       selectedAddons,
       selectedRemovables,
+      instructions: customInstructions,
       quantity,
       customKey: `${item.id}-${Date.now()}`
     };
@@ -227,6 +231,7 @@ if (restaurantData.isActive === false) {
     setQuantity(1);
     setSelectedAddons([]);
     setSelectedRemovables([]);
+    setInstructions('');
     setIsComboSelected(false);
   };
 
@@ -434,7 +439,10 @@ if (restaurantData.isActive === false) {
               } pointer-events-auto`}
             onClick={() => {
               setIsVisible(false);
-              setTimeout(() => setSelectedItem(null), 300);
+              setTimeout(() => {
+                setSelectedItem(null);
+                setInstructions('');
+              }, 300);
             }}
           />
 
@@ -450,7 +458,10 @@ if (restaurantData.isActive === false) {
                 <button
                   onClick={() => {
                     setIsVisible(false);
-                    setTimeout(() => setSelectedItem(null), 300);
+                    setTimeout(() => {
+                      setSelectedItem(null);
+                      setInstructions('');
+                    }, 300);
                   }}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -550,6 +561,18 @@ if (restaurantData.isActive === false) {
                   </div>
                 </div>
               )}
+
+              {/* Instructions */}
+              <div className="mb-6">
+                <h4 className="font-medium text-gray-800 mb-3">Instructions</h4>
+                <textarea
+                  className="w-full border-gray-300 rounded-md p-2 text-sm text-gray-800 focus:ring-orange-600 focus:border-orange-600"
+                  rows={3}
+                  placeholder="Add any special requests"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                />
+              </div>
             </div>
 
 
@@ -594,7 +617,8 @@ if (restaurantData.isActive === false) {
                       selectedAddons,
                       selectedRemovables,
                       quantity,
-                      isComboSelected
+                      isComboSelected,
+                      instructions
                     );
                   }}
                   className="hover:brightness-120 text-white py-2 px-6 rounded-lg font-medium transition-colors" style={{
@@ -674,6 +698,12 @@ if (restaurantData.isActive === false) {
                             {item.selectedRemovables.map(removable => (
                               <div key={removable}>- {removable}</div>
                             ))}
+                          </div>
+                        )}
+
+                        {item.instructions && (
+                          <div className="mt-1 text-sm text-gray-600">
+                            <div>Note: {item.instructions}</div>
                           </div>
                         )}
                       </div>
@@ -854,6 +884,18 @@ if (restaurantData.isActive === false) {
                 <span className="text-gray-800">Total:</span>
                 <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
               </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Order Note
+                </label>
+                <textarea
+                  value={orderNote}
+                  onChange={(e) => setOrderNote(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800 placeholder:text-gray-500"
+                  placeholder="Any notes for the restaurant?"
+                />
+              </div>
             </div>
 
             <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
@@ -866,15 +908,15 @@ if (restaurantData.isActive === false) {
               <button
                 onClick={async () => {
                   try {
-                    // Save the order in Firestore
-                    const orderRef = await createOrder(orderData);
+                    const finalOrderData = { ...orderData, orderNote };
+                    const orderRef = await createOrder(finalOrderData);
 
                     // Clear cart locally + remotely
                     setCart([]);
                     await clearCart(cartId);
                     await updateDoc(doc(db, 'carts', cartId), { status: 'completed' });
                     // Fetch phone number of selected branch
-                    const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
+                    const branchDoc = await getDoc(doc(db, 'restaurants', finalOrderData.restaurantId, 'branches', finalOrderData.branchId));
                     const phone = branchDoc?.data()?.phone;
 
                     if (!phone) {
@@ -885,23 +927,25 @@ if (restaurantData.isActive === false) {
                     // Format WhatsApp message
                     const messageLines = [
                       `*New Order*`,
-                      `Name: ${orderData.fullName}`,
-                      `Phone: +961${orderData.mobileNumber}`,
-                      `Region: ${orderData.region}, Area: ${orderData.area}`,
-                      `Address: ${orderData.addressDetails}`,
-                      `Location: ${orderData.mapUrl}`,
+                      `Name: ${finalOrderData.fullName}`,
+                      `Phone: +961${finalOrderData.mobileNumber}`,
+                      `Region: ${finalOrderData.region}, Area: ${finalOrderData.area}`,
+                      `Address: ${finalOrderData.addressDetails}`,
+                      `Location: ${finalOrderData.mapUrl}`,
+                      finalOrderData.orderNote ? `Order Note: ${finalOrderData.orderNote}` : '',
                       '',
-                      ...orderData.items.map((item, i) => {
+                      ...finalOrderData.items.map((item, i) => {
                         const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
                         const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
                         const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
-                        return [line, addons, removables].filter(Boolean).join('\n');
+                        const note = item.instructions ? `   *Note:* ${item.instructions}` : '';
+                        return [line, addons, removables, note].filter(Boolean).join('\n');
                       }),
                       '',
-                      `Total: $${orderData.total.toFixed(2)}`
+                      `Total: $${finalOrderData.total.toFixed(2)}`
                     ];
 
-                    const encodedMessage = encodeURIComponent(messageLines.join('\n'));
+                    const encodedMessage = encodeURIComponent(messageLines.filter(Boolean).join('\n'));
                     {
                       orderPlaced && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">

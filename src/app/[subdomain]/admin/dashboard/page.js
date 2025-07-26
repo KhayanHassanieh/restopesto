@@ -106,6 +106,7 @@ export default function DashboardPage() {
                             area: data.area || '',
                             region: data.region || '',
                             branchId: data.branchId || '',
+                            orderNote: data.orderNote || '',
                             finalTotal: amount,
                             totalAmount: amount,
                             total: amount,
