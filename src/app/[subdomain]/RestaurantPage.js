@@ -36,6 +36,7 @@ export default function RestaurantPage({ subdomain }) {
   const [location, setLocation] = useState(null);
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderNote, setOrderNote] = useState('');
 
   const router = useRouter();
 
@@ -883,6 +884,18 @@ if (restaurantData.isActive === false) {
                 <span className="text-gray-800">Total:</span>
                 <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
               </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Order Note
+                </label>
+                <textarea
+                  value={orderNote}
+                  onChange={(e) => setOrderNote(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800 placeholder:text-gray-500"
+                  placeholder="Any notes for the restaurant?"
+                />
+              </div>
             </div>
 
             <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
@@ -895,15 +908,15 @@ if (restaurantData.isActive === false) {
               <button
                 onClick={async () => {
                   try {
-                    // Save the order in Firestore
-                    const orderRef = await createOrder(orderData);
+                    const finalOrderData = { ...orderData, orderNote };
+                    const orderRef = await createOrder(finalOrderData);
 
                     // Clear cart locally + remotely
                     setCart([]);
                     await clearCart(cartId);
                     await updateDoc(doc(db, 'carts', cartId), { status: 'completed' });
                     // Fetch phone number of selected branch
-                    const branchDoc = await getDoc(doc(db, 'restaurants', orderData.restaurantId, 'branches', orderData.branchId));
+                    const branchDoc = await getDoc(doc(db, 'restaurants', finalOrderData.restaurantId, 'branches', finalOrderData.branchId));
                     const phone = branchDoc?.data()?.phone;
 
                     if (!phone) {
@@ -914,13 +927,14 @@ if (restaurantData.isActive === false) {
                     // Format WhatsApp message
                     const messageLines = [
                       `*New Order*`,
-                      `Name: ${orderData.fullName}`,
-                      `Phone: +961${orderData.mobileNumber}`,
-                      `Region: ${orderData.region}, Area: ${orderData.area}`,
-                      `Address: ${orderData.addressDetails}`,
-                      `Location: ${orderData.mapUrl}`,
+                      `Name: ${finalOrderData.fullName}`,
+                      `Phone: +961${finalOrderData.mobileNumber}`,
+                      `Region: ${finalOrderData.region}, Area: ${finalOrderData.area}`,
+                      `Address: ${finalOrderData.addressDetails}`,
+                      `Location: ${finalOrderData.mapUrl}`,
+                      finalOrderData.orderNote ? `Order Note: ${finalOrderData.orderNote}` : '',
                       '',
-                      ...orderData.items.map((item, i) => {
+                      ...finalOrderData.items.map((item, i) => {
                         const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
                         const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
                         const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
@@ -928,10 +942,10 @@ if (restaurantData.isActive === false) {
                         return [line, addons, removables, note].filter(Boolean).join('\n');
                       }),
                       '',
-                      `Total: $${orderData.total.toFixed(2)}`
+                      `Total: $${finalOrderData.total.toFixed(2)}`
                     ];
 
-                    const encodedMessage = encodeURIComponent(messageLines.join('\n'));
+                    const encodedMessage = encodeURIComponent(messageLines.filter(Boolean).join('\n'));
                     {
                       orderPlaced && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
