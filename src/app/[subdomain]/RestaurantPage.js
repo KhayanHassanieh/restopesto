@@ -452,7 +452,7 @@ const filteredMenuItems = searchTerm
       ))}
     </div>
     {filteredMenuItems.length === 0 && (
-      <p className="text-gray-600 text-center py-8">No items found matching "{searchTerm}"</p>
+      <p className="text-gray-600 text-center py-8">No items found matching &quot;{searchTerm}&quot;</p>
     )}
   </section>
 ) : (
