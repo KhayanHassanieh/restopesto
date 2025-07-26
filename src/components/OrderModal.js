@@ -3,6 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
 
+const STATUSES = [
+    'Ordered',
+    'Confirmed',
+    'In Progress',
+    'Out for Delivery',
+    'Done'
+];
+
 export default function OrderModal({
     order: originalOrder,
     mode,
@@ -46,7 +54,8 @@ export default function OrderModal({
                 })),
                 addressDetails: originalOrder.addressDetails || '',
                 area: originalOrder.area || '',
-                region: originalOrder.region || ''
+                region: originalOrder.region || '',
+                status: originalOrder.status || 'Ordered'
             };
             setFormData(safeOrder);
             setLoading(false);
@@ -227,7 +236,7 @@ export default function OrderModal({
                             </svg>
                             Customer Information
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                 {mode === 'view' ? (
@@ -256,6 +265,23 @@ export default function OrderModal({
                                         className="text-black w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition cursor-text font-medium"
                                         required
                                     />
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                {mode === 'view' ? (
+                                    <p className="text-gray-900 bg-white p-2 rounded border border-transparent">{formData.status}</p>
+                                ) : (
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleChange}
+                                        className="text-black w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition cursor-pointer font-medium"
+                                    >
+                                        {STATUSES.map(status => (
+                                            <option key={status} value={status}>{status}</option>
+                                        ))}
+                                    </select>
                                 )}
                             </div>
                         </div>

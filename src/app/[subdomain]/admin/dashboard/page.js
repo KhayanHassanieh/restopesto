@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
 // Dashboard Components
@@ -35,7 +35,16 @@ export default function DashboardPage() {
         return () => unsubscribe();
     }, [router]);
 
-    const updateOrderInState = (orderId, updatedData) => {
+    const updateOrderInState = async (orderId, updatedData) => {
+        try {
+            await updateDoc(doc(db, 'orders', orderId), {
+                ...updatedData,
+                updatedAt: new Date()
+            });
+        } catch (error) {
+            console.error('Error updating order:', error);
+        }
+
         setOrdersData(prevOrders =>
             prevOrders.map(order =>
                 order.id === orderId ? { ...order, ...updatedData } : order
@@ -110,7 +119,7 @@ export default function DashboardPage() {
                             finalTotal: amount,
                             totalAmount: amount,
                             total: amount,
-                            status: data.status || 'pending',
+                            status: data.status || 'Ordered',
                             createdAt: data.createdAt?.toDate() || new Date(),
                             updatedAt: data.updatedAt?.toDate() || new Date()
                         };
@@ -147,6 +156,7 @@ export default function DashboardPage() {
                             finalTotal: amount,
                             totalAmount: amount,
                             total: amount,
+                            status: data.status || 'Ordered',
                             createdAt: data.createdAt?.toDate() || new Date(),
                             updatedAt: data.updatedAt?.toDate() || new Date()
                         };
