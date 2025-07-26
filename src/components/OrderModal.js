@@ -41,7 +41,8 @@ export default function OrderModal({
                     addonsTotal: Number(item.addonsTotal) || 0,
                     quantity: Number(item.quantity) || 1,
                     selectedAddons: Array.isArray(item.selectedAddons) ? item.selectedAddons : [],
-                    selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : []
+                    selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : [],
+                    instructions: item.instructions || ''
                 })),
                 addressDetails: originalOrder.addressDetails || '',
                 area: originalOrder.area || '',
@@ -489,6 +490,25 @@ export default function OrderModal({
                                                                     )}
                                                                 </div>
                                                             ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Instructions */}
+                                                    {mode === 'view' ? (
+                                                        item.instructions && (
+                                                            <div className="mt-2 text-xs text-gray-600">
+                                                                Note: {item.instructions}
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <div className="mt-2">
+                                                            <textarea
+                                                                value={item.instructions}
+                                                                onChange={(e) => handleItemChange(itemIndex, 'instructions', e.target.value)}
+                                                                className="w-full p-1 border border-gray-300 rounded-md text-xs focus:ring-blue-500 focus:border-blue-500"
+                                                                rows={2}
+                                                                placeholder="Special instructions"
+                                                            />
                                                         </div>
                                                     )}
 
