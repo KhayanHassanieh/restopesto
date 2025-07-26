@@ -96,16 +96,12 @@ export default function DashboardPage() {
                         const amount = Number(
                             data.finalTotal ?? data.total ?? data.totalAmount ?? 0
                         ) || 0;
-                        const cart = Array.isArray(data.cart)
-                            ? data.cart
-                            : Array.isArray(data.items)
-                            ? data.items
-                            : [];
+                        const items = Array.isArray(data.items) ? data.items : [];
                         return {
                             id: doc.id,
                             fullName: data.fullName || '',
                             mobileNumber: data.mobileNumber || '',
-                            cart,
+                            items,
                             addressDetails: data.addressDetails || '',
                             area: data.area || '',
                             region: data.region || '',
@@ -142,15 +138,11 @@ export default function DashboardPage() {
                         const amount = Number(
                             data.finalTotal ?? data.total ?? data.totalAmount ?? 0
                         ) || 0;
-                        const cart = Array.isArray(data.cart)
-                            ? data.cart
-                            : Array.isArray(data.items)
-                            ? data.items
-                            : [];
+                        const items = Array.isArray(data.items) ? data.items : [];
                         return {
                             id: doc.id,
                             ...data,
-                            cart,
+                            items,
                             finalTotal: amount,
                             totalAmount: amount,
                             total: amount,

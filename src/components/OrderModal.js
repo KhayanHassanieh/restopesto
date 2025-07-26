@@ -29,9 +29,7 @@ export default function OrderModal({
 
     useEffect(() => {
         if (originalOrder) {
-            const rawCart = Array.isArray(originalOrder.cart)
-                ? originalOrder.cart
-                : Array.isArray(originalOrder.items)
+            const rawCart = Array.isArray(originalOrder.items)
                 ? originalOrder.items
                 : [];
             const safeOrder = {
@@ -167,8 +165,10 @@ export default function OrderModal({
         try {
             const orderToSave = {
                 ...formData,
+                items: formData.cart,
                 finalTotal: calculateOrderTotal()
             };
+            delete orderToSave.cart;
             await onSave(orderToSave.id, orderToSave);
             onClose();
         } catch (error) {
