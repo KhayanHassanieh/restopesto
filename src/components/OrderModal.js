@@ -29,18 +29,20 @@ export default function OrderModal({
 
     useEffect(() => {
         if (originalOrder) {
+            const rawCart = Array.isArray(originalOrder.items)
+                ? originalOrder.items
+                : [];
             const safeOrder = {
                 ...originalOrder,
-                cart: Array.isArray(originalOrder.cart) ?
-                    originalOrder.cart.map(item => ({
-                        ...item,
-                        name: item.name || 'Unnamed Item',
-                        basePrice: Number(item.basePrice) || 0,
-                        addonsTotal: Number(item.addonsTotal) || 0,
-                        quantity: Number(item.quantity) || 1,
-                        selectedAddons: Array.isArray(item.selectedAddons) ? item.selectedAddons : [],
-                        selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : []
-                    })) : [],
+                cart: rawCart.map(item => ({
+                    ...item,
+                    name: item.name || 'Unnamed Item',
+                    basePrice: Number(item.basePrice) || 0,
+                    addonsTotal: Number(item.addonsTotal) || 0,
+                    quantity: Number(item.quantity) || 1,
+                    selectedAddons: Array.isArray(item.selectedAddons) ? item.selectedAddons : [],
+                    selectedRemovables: Array.isArray(item.selectedRemovables) ? item.selectedRemovables : []
+                })),
                 addressDetails: originalOrder.addressDetails || '',
                 area: originalOrder.area || '',
                 region: originalOrder.region || ''
@@ -163,8 +165,10 @@ export default function OrderModal({
         try {
             const orderToSave = {
                 ...formData,
+                items: formData.cart,
                 finalTotal: calculateOrderTotal()
             };
+            delete orderToSave.cart;
             await onSave(orderToSave.id, orderToSave);
             onClose();
         } catch (error) {

@@ -65,6 +65,10 @@ export default function DashboardPage() {
             if (!querySnapshot.empty) {
                 const restaurantDoc = querySnapshot.docs[0];
                 const restaurantId = restaurantDoc.id;
+                const branchId =
+                    typeof window !== 'undefined'
+                        ? localStorage.getItem('branchId')
+                        : null;
 
                 setRestaurantData({
                     id: restaurantId,
@@ -74,29 +78,37 @@ export default function DashboardPage() {
 
                 // Try to fetch orders with the composite query
                 try {
-                    const ordersQuery = query(
-                        collection(db, 'orders'),
-                        where('restaurantId', '==', restaurantId),
-                        orderBy('createdAt', 'desc')
-                    );
+                    const ordersQuery = branchId
+                        ? query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              where('branchId', '==', branchId),
+                              orderBy('createdAt', 'desc')
+                          )
+                        : query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              orderBy('createdAt', 'desc')
+                          );
                     const ordersSnapshot = await getDocs(ordersQuery);
                     const orders = ordersSnapshot.docs.map(doc => {
                         const data = doc.data();
-                        const amount = typeof data.finalTotal === 'number' ? data.finalTotal :
-                            typeof data.total === 'number' ? data.total :
-                                typeof data.totalAmount === 'number' ? data.totalAmount : 0;
+                        const amount = Number(
+                            data.finalTotal ?? data.total ?? data.totalAmount ?? 0
+                        ) || 0;
+                        const items = Array.isArray(data.items) ? data.items : [];
                         return {
                             id: doc.id,
                             fullName: data.fullName || '',
                             mobileNumber: data.mobileNumber || '',
-                            cart: data.cart || [],
+                            items,
                             addressDetails: data.addressDetails || '',
                             area: data.area || '',
                             region: data.region || '',
                             branchId: data.branchId || '',
-                            finalTotal: amount,  // Always use finalTotal
-                            totalAmount: amount, // Keep for backward compatibility if needed
-                            total: amount,       // Keep for backward compatibility if needed
+                            finalTotal: amount,
+                            totalAmount: amount,
+                            total: amount,
                             status: data.status || 'pending',
                             createdAt: data.createdAt?.toDate() || new Date(),
                             updatedAt: data.updatedAt?.toDate() || new Date()
@@ -110,17 +122,34 @@ export default function DashboardPage() {
                         setIndexError(true);
                     }
                     // Fallback: fetch without ordering
-                    const fallbackQuery = query(
-                        collection(db, 'orders'),
-                        where('restaurantId', '==', restaurantId)
-                    );
+                    const fallbackQuery = branchId
+                        ? query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId),
+                              where('branchId', '==', branchId)
+                          )
+                        : query(
+                              collection(db, 'orders'),
+                              where('restaurantId', '==', restaurantId)
+                          );
                     const fallbackSnapshot = await getDocs(fallbackQuery);
-                    const fallbackOrders = fallbackSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate() || new Date(),
-                        updatedAt: doc.data().updatedAt?.toDate() || new Date()
-                    }));
+                    const fallbackOrders = fallbackSnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        const amount = Number(
+                            data.finalTotal ?? data.total ?? data.totalAmount ?? 0
+                        ) || 0;
+                        const items = Array.isArray(data.items) ? data.items : [];
+                        return {
+                            id: doc.id,
+                            ...data,
+                            items,
+                            finalTotal: amount,
+                            totalAmount: amount,
+                            total: amount,
+                            createdAt: data.createdAt?.toDate() || new Date(),
+                            updatedAt: data.updatedAt?.toDate() || new Date()
+                        };
+                    });
                     // Sort manually as fallback
                     fallbackOrders.sort((a, b) => b.createdAt - a.createdAt);
                     setOrdersData(fallbackOrders);
