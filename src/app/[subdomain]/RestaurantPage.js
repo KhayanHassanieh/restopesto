@@ -7,7 +7,7 @@ import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
 import RestaurantFooter from '@/components/RestaurantFooter';
-import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity } from '@/utils/cartService';
+import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity, removeItemFromCart } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { isRestaurantOpen } from '@/utils/openingHours';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -114,12 +114,9 @@ if (restaurantData.isActive === false) {
         });
         setBranches(processedBranches);
 
-        let resolvedCartId = incomingCartId;
-        if (!incomingCartId) {
-          resolvedCartId = await createCart({ restaurantId });
-          router.replace(`?cartId=${resolvedCartId}`);
+        if (incomingCartId) {
+          setCartId(incomingCartId);
         }
-        setCartId(resolvedCartId);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -230,8 +227,22 @@ const filteredMenuItems = searchTerm
       customKey: `${item.id}-${Date.now()}`
     };
 
-    setCart(prev => [...prev, itemWithCustomization]);
-    addItemToCart(activeCartId, itemWithCustomization);
+    const match = items.find(i =>
+      i.itemId === itemWithCustomization.itemId &&
+      i.isComboSelected === itemWithCustomization.isComboSelected &&
+      JSON.stringify(i.selectedAddons.map(a => a.id).sort()) ===
+        JSON.stringify(itemWithCustomization.selectedAddons.map(a => a.id).sort()) &&
+      JSON.stringify([...(i.selectedRemovables || [])].sort()) ===
+        JSON.stringify([...(itemWithCustomization.selectedRemovables || [])].sort()) &&
+      (i.instructions || '') === (itemWithCustomization.instructions || '')
+    );
+
+    if (match) {
+      await updateQuantity(match.customKey, match.quantity + quantity);
+    } else {
+      setCart(prev => [...prev, itemWithCustomization]);
+      await addItemToCart(activeCartId, itemWithCustomization);
+    }
 
     setSelectedItem(null);
     setQuantity(1);
@@ -247,7 +258,7 @@ const filteredMenuItems = searchTerm
   const updateQuantity = async (itemKey, newQuantity) => {
     if (cartStatus === 'completed') return; // 🔒 Guard
     if (newQuantity < 1) {
-      removeFromCart(itemKey);
+      await removeFromCart(itemKey);
       return;
     }
 
@@ -264,10 +275,12 @@ const filteredMenuItems = searchTerm
     }
   };
 
-  const removeFromCart = (itemKey) => {
+  const removeFromCart = async (itemKey) => {
     if (cartStatus === 'completed') return; // 🔒 Guard
     setCart(prev => prev.filter(item => item.customKey !== itemKey));
-    removeItemFromCart(cartId, itemKey)
+    if (cartId) {
+      await removeItemFromCart(cartId, itemKey);
+    }
   };
 
   const cartTotal = items.reduce((sum, item) => {
@@ -651,7 +664,8 @@ const filteredMenuItems = searchTerm
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-200 text-gray-800"
+                      disabled={quantity === 1}
+                      className={`w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-200 text-gray-800 ${quantity === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       -
                     </button>
@@ -774,7 +788,8 @@ const filteredMenuItems = searchTerm
                           <div className="flex items-center mt-2">
                             <button
                               onClick={() => updateQuantity(item.customKey, item.quantity - 1)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                              disabled={item.quantity === 1}
+                              className={`w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 ${item.quantity === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                               -
                             </button>
