@@ -114,12 +114,9 @@ if (restaurantData.isActive === false) {
         });
         setBranches(processedBranches);
 
-        let resolvedCartId = incomingCartId;
-        if (!incomingCartId) {
-          resolvedCartId = await createCart({ restaurantId });
-          router.replace(`?cartId=${resolvedCartId}`);
+        if (incomingCartId) {
+          setCartId(incomingCartId);
         }
-        setCartId(resolvedCartId);
       } catch (error) {
         console.error('Error:', error);
       } finally {
