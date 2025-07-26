@@ -37,7 +37,8 @@ export default function RestaurantPage({ subdomain }) {
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNote, setOrderNote] = useState('');
-
+const [searchTerm, setSearchTerm] = useState('');
+const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -174,7 +175,12 @@ if (restaurantData.isActive === false) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-
+const filteredMenuItems = searchTerm 
+  ? menuItems.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  : menuItems;
   const addToCart = async (
     item,
     selectedAddons = [],
@@ -360,9 +366,41 @@ if (restaurantData.isActive === false) {
 
 
 
-
+{/* Search Bar */}
+<div className="sticky top-0 z-20 bg-white px-4 py-3 shadow-sm">
+  <div className="relative max-w-xl mx-auto">
+    <input
+      type="text"
+      placeholder="Search menu items..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setIsSearching(e.target.value.length > 0);
+      }}
+      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800"
+    />
+    <div className="absolute left-3 top-2.5 text-gray-400">
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+    {searchTerm && (
+      <button
+        onClick={() => {
+          setSearchTerm('');
+          setIsSearching(false);
+        }}
+        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
       {/* Categories Navigation */}
-      <div className="sticky top-0 z-30 shadow-sm py-3 px-4"
+      <div className="sticky top-16 z-30 shadow-sm py-3 px-4"
         style={{ backgroundColor: 'var(--theme-background)' }}>
         <div className="overflow-x-auto">
           <div className="flex justify-center min-w-fit w-max mx-auto space-x-2 pb-2">
@@ -400,25 +438,43 @@ if (restaurantData.isActive === false) {
           </div>
         </section>*/}
 
-        {/* Category Sections */}
-        {menuByCategory.map(category => (
-          <section
-            key={category.id}
-            id={`category-${category.id}`}
-            className="mb-12"
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.name}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {category.items.map(item => (
-                <MenuItem
-                  key={item.id}
-                  item={item}
-                  onSelect={() => setSelectedItem(item)}
-                />
-              ))}
-            </div>
-          </section>
+       {/* Category Sections */}
+{isSearching ? (
+  <section className="container ">
+    <h2 className="text-2xl font-bold text-gray-800 mb-6">Search Results</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredMenuItems.map(item => (
+        <MenuItem
+          key={item.id}
+          item={item}
+          onSelect={() => setSelectedItem(item)}
+        />
+      ))}
+    </div>
+    {filteredMenuItems.length === 0 && (
+      <p className="text-gray-600 text-center py-8">No items found matching "{searchTerm}"</p>
+    )}
+  </section>
+) : (
+  menuByCategory.map(category => (
+    <section
+      key={category.id}
+      id={`category-${category.id}`}
+      className="mb-12"
+    >
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.name}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {category.items.map(item => (
+          <MenuItem
+            key={item.id}
+            item={item}
+            onSelect={() => setSelectedItem(item)}
+          />
         ))}
+      </div>
+    </section>
+  ))
+)}
       </main>
 
       <RestaurantFooter
