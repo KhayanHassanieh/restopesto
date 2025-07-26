@@ -25,17 +25,27 @@ function DashboardPage() {
   const [name, setName] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [phone, setPhone] = useState('');
+  const [openingHours, setOpeningHours] = useState('');
+  const [instagramURL, setInstagramURL] = useState('');
+  const [tiktokURL, setTiktokURL] = useState('');
+  const [facebookURL, setFacebookURL] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
   const [logoFile, setLogoFile] = useState(null);
   const [editName, setEditName] = useState('');
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editOpeningHours, setEditOpeningHours] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
+
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editInstagramURL, setEditInstagramURL] = useState('');
+  const [editTiktokURL, setEditTiktokURL] = useState('');
+  const [editFacebookURL, setEditFacebookURL] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#7b68ee');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
@@ -135,7 +145,12 @@ function DashboardPage() {
         name,
         subdomain,
         phone,
+        openingHours,
+        instagramURL,
+        tiktokURL,
+        facebookURL,
         subscriptionDate: new Date(),
+
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: true,
         logoUrl: uploadedLogoUrl,
@@ -163,8 +178,13 @@ function DashboardPage() {
       setName('');
       setSubdomain('');
       setPhone('');
+      setOpeningHours('');
+      setInstagramURL('');
+      setTiktokURL('');
+      setFacebookURL('');
       setUsername('');
       setPassword('');
+
       setLogoFile(null);
       setBackgroundImageFile(null);
       setIsAdding(false);
@@ -200,6 +220,11 @@ function DashboardPage() {
       setEditName(restaurant.name);
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
+      setEditOpeningHours(restaurant.openingHours || '');
+      setEditInstagramURL(restaurant.instagramURL || '');
+      setEditTiktokURL(restaurant.tiktokURL || '');
+      setEditFacebookURL(restaurant.facebookURL || '');
+
   
       let dateValue = '';
       if (restaurant.expiresAt) {
@@ -258,10 +283,15 @@ function DashboardPage() {
         name: updatedData.name || editName,
         subdomain: updatedData.subdomain || editSubdomain,
         phone: updatedData.phone || editPhone,
+        openingHours: updatedData.openingHours || editOpeningHours,
+        instagramURL: updatedData.instagramURL || editInstagramURL,
+        tiktokURL: updatedData.tiktokURL || editTiktokURL,
+        facebookURL: updatedData.facebookURL || editFacebookURL,
         expiresAt: Timestamp.fromDate(new Date(updatedData.expiresAt || editExpiresAt)),
         ...(bgImageUrl && { backgroundImageUrl: bgImageUrl }),
         ...(logoUrl && { logoUrl }),
         theme: {
+
           primaryColor,
           backgroundColor,
           accentColor,
@@ -479,16 +509,28 @@ function DashboardPage() {
                     type="text"
                     name="phone"
                     id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800 placeholder-gray-400"
-                    placeholder="+1234567890"
-                  />
-                </div>
-                <div className="sm:col-span-3">
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                    Username <span className="text-red-500">*</span>
-                  </label>
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm  text-gray-800 placeholder-gray-400"
+                placeholder="+1234567890"
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <label htmlFor="openingHours" className="block text-sm font-medium text-gray-700">Opening Hours</label>
+              <input
+                type="text"
+                name="openingHours"
+                id="openingHours"
+                value={openingHours}
+                onChange={(e) => setOpeningHours(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+              />
+            </div>
+            <div className="sm:col-span-3">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username <span className="text-red-500">*</span>
+              </label>
+
                   <input
                     type="text"
                     name="username"
@@ -507,16 +549,53 @@ function DashboardPage() {
                   <input
                     type="password"
                     name="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
-                    placeholder="••••••••"
-                  />
-                </div>
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <label htmlFor="instagramURL" className="block text-sm font-medium text-gray-700">Instagram Page</label>
+              <input
+                type="text"
+                name="instagramURL"
+                id="instagramURL"
+                value={instagramURL}
+                onChange={(e) => setInstagramURL(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <label htmlFor="tiktokURL" className="block text-sm font-medium text-gray-700">Tiktok Page</label>
+              <input
+                type="text"
+                name="tiktokURL"
+                id="tiktokURL"
+                value={tiktokURL}
+                onChange={(e) => setTiktokURL(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <label htmlFor="facebookURL" className="block text-sm font-medium text-gray-700">Facebook Page</label>
+              <input
+                type="text"
+                name="facebookURL"
+                id="facebookURL"
+                value={facebookURL}
+                onChange={(e) => setFacebookURL(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
+              />
+            </div>
 
                 {/* Primary Color */}
                 <div className="sm:col-span-2 relative">
+
                   <label className="block text-sm font-medium text-gray-700">Primary Color</label>
                   <div className="flex items-center space-x-2 mt-1">
                     <input
@@ -692,16 +771,21 @@ function DashboardPage() {
                     editExpiresAt={editExpiresAt}
                     onToggleBranches={handleToggleBranches}
                     onToggleEdit={() => toggleEdit(r)}
-                    onEditChange={{
+                  onEditChange={{
                       name: setEditName,
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
+                      openingHours: setEditOpeningHours,
                       expiresAt: setEditExpiresAt,
                       username: setEditUsername,
-                      password: setEditPassword
+                      password: setEditPassword,
+                      instagramURL: setEditInstagramURL,
+                      tiktokURL: setEditTiktokURL,
+                      facebookURL: setEditFacebookURL
                     }}
                     onUpdate={handleUpdateRestaurant}
                     onToggleActive={handleToggleActive}
+
 
                     primaryColor={primaryColor}
                     setPrimaryColor={setPrimaryColor}
@@ -711,7 +795,12 @@ function DashboardPage() {
                     setAccentColor={setAccentColor}
                     editUsername={editUsername}
                     editPassword={editPassword}
+                    editOpeningHours={editOpeningHours}
+                    editInstagramURL={editInstagramURL}
+                    editTiktokURL={editTiktokURL}
+                    editFacebookURL={editFacebookURL}
                   />
+
                 </div>
               ))
             )}

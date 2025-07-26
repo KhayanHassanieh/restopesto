@@ -1,11 +1,13 @@
 'use client';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { FaQrcode, FaChartLine, FaMobileAlt, FaPalette, FaCrown } from 'react-icons/fa';
+import { FaQrcode, FaChartLine, FaMobileAlt, FaPalette, FaCrown, FaCheck } from 'react-icons/fa';
 import { IoRestaurant } from 'react-icons/io5';
 import { MdSupportAgent } from 'react-icons/md';
 import PhoneMockupSlider from '../components/PhoneMockupSlider';
+import { useState } from 'react';
 export default function Home() {
+  const [isYearly, setIsYearly] = useState(true);
   return (
     <>
       <Navbar />
@@ -163,26 +165,26 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">1</div>
-                <h3 className="text-xl font-bold mb-3">Customize Your Menu</h3>
+                <img src='/UI/1st_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <h3 className="text-xl font-bold mb-3">Customer Selects Items</h3>
                 <p className="text-gray-600">
-                  Upload your menu items, set prices, and customize the design to match your brand.
+                  A seamless, mobile-friendly menu for easy item selection.
                 </p>
               </div>
               
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">2</div>
-                <h3 className="text-xl font-bold mb-3">Generate QR Codes</h3>
+                <img src='/UI/2nd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <h3 className="text-xl font-bold mb-3">Shareable Cart with Friends</h3>
                 <p className="text-gray-600">
-                  We create unique QR codes for your restaurant that you can print or display anywhere.
-                </p>
+                 Group ordering made easy — more items, more value.
+                 </p>
               </div>
               
               <div className="text-center">
-                <div className="bg-[#ffd200] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">3</div>
-                <h3 className="text-xl font-bold mb-3">Start Receiving Orders</h3>
+                <img src='/UI/3rd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+               <h3 className="text-xl font-bold mb-3">Ordering Directly via WhatsApp</h3>
                 <p className="text-gray-600">
-                  Customers scan, browse, and order - you get instant notifications and detailed analytics.
+                No apps, no delays — orders sent instantly to your team.
                 </p>
               </div>
             </div>
@@ -192,111 +194,117 @@ export default function Home() {
         {/* Pricing */}
         <section id="pricing" className="py-20 px-6">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                No hidden fees. Cancel anytime.
-              </p>
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4">Flexible Plans</h2>
+              <p className="text-xl text-gray-600">Choose monthly or yearly billing</p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Basic Plan */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg border border-gray-200">
-                <h3 className="text-2xl font-bold mb-4">Starter</h3>
-                <p className="text-gray-600 mb-6">Perfect for small cafes and food trucks</p>
+
+            <div className="flex justify-center mb-10">
+              <button
+                onClick={() => setIsYearly(false)}
+                className={`px-4 py-2 rounded-l-lg font-medium border transition ${!isYearly ? 'bg-[#ffd200] text-[#333]' : 'bg-white'} `}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsYearly(true)}
+                className={`px-4 py-2 rounded-r-lg font-medium border transition ${isYearly ? 'bg-[#ffd200] text-[#333]' : 'bg-white'}`}
+              >
+                Yearly
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Core Plan */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100 flex flex-col">
+                <h3 className="text-2xl font-bold mb-2">Core</h3>
+                <p className="text-gray-600 mb-4">Everything to get started</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">$29</span>
-                  <span className="text-gray-500">/month</span>
+                  <span className="text-4xl font-bold">${isYearly ? '250' : '25'}</span>
+                  <span className="text-gray-500">/{isYearly ? 'year' : 'month'}</span>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Up to 50 menu items
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Basic analytics
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    QR code generation
-                  </li>
+                <ul className="space-y-3 mb-8 flex-1">
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Menu management</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Theming</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />WhatsApp API</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Basic analytics</li>
                 </ul>
-                <a href="#" className="block w-full bg-gray-100 hover:bg-gray-200 text-[#333333] text-center font-bold py-3 px-4 rounded-lg transition">
-                  Get Started
-                </a>
+                <a href="#" className="block w-full bg-[#ffd200] hover:bg-[#e6bd00] text-[#333] text-center font-bold py-3 px-4 rounded-lg transition">Get Started</a>
               </div>
-              
-              {/* Popular Plan */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-2xl border-2 border-[#ffd200] relative">
-                <div className="absolute top-0 right-0 bg-[#ffd200] text-[#333333] text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">MOST POPULAR</div>
-                <h3 className="text-2xl font-bold mb-4">Professional</h3>
-                <p className="text-gray-600 mb-6">Ideal for full-service restaurants</p>
+
+              {/* Plus Plan */}
+              <div className="bg-white rounded-xl p-8 shadow-2xl border-2 border-[#ffd200] relative flex flex-col">
+                <div className="absolute top-0 right-0 bg-[#ffd200] text-[#333] text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">BEST VALUE</div>
+                <h3 className="text-2xl font-bold mb-2">Plus</h3>
+                <p className="text-gray-600 mb-4">For growing restaurants</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">$79</span>
-                  <span className="text-gray-500">/month</span>
+                  <span className="text-4xl font-bold">${isYearly ? '300' : '30'}</span>
+                  <span className="text-gray-500">/{isYearly ? 'year' : 'month'}</span>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Unlimited menu items
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Advanced analytics
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Priority support
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Custom domain
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Table ordering system
-                  </li>
+                <ul className="space-y-3 mb-8 flex-1">
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />All Core features</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Sharable cart</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Multi-branch support</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Image-based combos</li>
+                  <li className="flex items-center"><FaCheck className="text-[#ffd200] mr-2" />Priority onboarding</li>
                 </ul>
-                <a href="#" className="block w-full bg-[#ffd200] hover:bg-[#e6bd00] text-[#333333] text-center font-bold py-3 px-4 rounded-lg transition">
-                  Get Started
-                </a>
+                <a href="#" className="block w-full bg-[#ffd200] hover:bg-[#e6bd00] text-[#333] text-center font-bold py-3 px-4 rounded-lg transition">Get Started</a>
               </div>
-              
-              {/* Enterprise Plan */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg border border-gray-200">
-                <h3 className="text-2xl font-bold mb-4">Enterprise</h3>
-                <p className="text-gray-600 mb-6">For restaurant groups and chains</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">$199</span>
-                  <span className="text-gray-500">/month</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Multi-location management
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Custom integrations
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    Dedicated account manager
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    API access
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#ffd200] mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
-                    White-label solutions
-                  </li>
-                </ul>
-                <a href="#" className="block w-full bg-gray-100 hover:bg-gray-200 text-[#333333] text-center font-bold py-3 px-4 rounded-lg transition">
-                  Contact Sales
-                </a>
-              </div>
+            </div>
+
+            {/* Comparison Table */}
+            <div className="overflow-x-auto mt-16">
+              <table className="min-w-full text-sm text-left">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4">Feature</th>
+                    <th className="py-2 px-4 text-center">Core</th>
+                    <th className="py-2 px-4 text-center">Plus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <tr>
+                    <td className="py-2 px-4">Menu management</td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Theming</td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">WhatsApp API</td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Basic analytics</td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Sharable cart</td>
+                    <td className="py-2 px-4 text-center"></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Multi-branch support</td>
+                    <td className="py-2 px-4 text-center"></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Image-based combos</td>
+                    <td className="py-2 px-4 text-center"></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4">Priority onboarding</td>
+                    <td className="py-2 px-4 text-center"></td>
+                    <td className="py-2 px-4 text-center"><FaCheck className="inline text-[#ffd200]" /></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </section>

@@ -2,7 +2,7 @@ export default function SalesDashboard({ orders = [], detailed = false }) {
   // Safely calculate totals with default empty array
   const totalSales = orders?.reduce((sum, order) => sum + (order?.finalTotal || 0), 0) || 0;
   const totalItems = orders?.reduce((sum, order) => {
-    return sum + (order?.cart?.reduce((itemSum, item) => itemSum + (item?.quantity || 0), 0) || 0);
+    return sum + (order?.items?.reduce((itemSum, item) => itemSum + (item?.quantity || 0), 0) || 0);
   }, 0) || 0;
 
   // Add debug logging

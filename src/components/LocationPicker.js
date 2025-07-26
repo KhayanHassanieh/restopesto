@@ -10,7 +10,18 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
 
   const [userPosition, setUserPosition] = useState(initialLocation || null);
   const [center, setCenter] = useState(initialLocation || null);
+  const [permissionState, setPermissionState] = useState(null);
   const mapRef = useRef(null);
+
+  // Check geolocation permission on mount
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((p) => {
+        setPermissionState(p.state);
+        p.onchange = () => setPermissionState(p.state);
+      });
+    }
+  }, []);
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -20,26 +31,32 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
     };
   }, []);
 
-  // Get current position once loaded
+  // Get current position once loaded and permission allows
   useEffect(() => {
     if (!isLoaded) return;
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserPosition(loc);
-          if (!center) setCenter(loc);
-        },
-        (err) => {
-          console.error('Error getting location', err);
-          if (!center) setCenter({ lat: 0, lng: 0 });
-        },
-        { enableHighAccuracy: true }
-      );
-    } else if (!center) {
-      setCenter({ lat: 0, lng: 0 });
+    if (!navigator.geolocation) {
+      if (!center) setCenter({ lat: 0, lng: 0 });
+      return;
     }
-  }, [isLoaded]);
+
+    if (permissionState === 'denied') {
+      if (!center) setCenter({ lat: 0, lng: 0 });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserPosition(loc);
+        if (!center) setCenter(loc);
+      },
+      (err) => {
+        console.error('Error getting location', err);
+        if (!center) setCenter({ lat: 0, lng: 0 });
+      },
+      { enableHighAccuracy: true }
+    );
+  }, [isLoaded, permissionState]);
 
   const handleIdle = () => {
     if (!mapRef.current) return;
@@ -78,6 +95,12 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
         />
       </div>
       <div className="p-4 space-y-4">
+        {permissionState === 'denied' && (
+          <p className="text-sm text-red-600">
+            Location permission is blocked. Please enable location access in
+            your browser settings.
+          </p>
+        )}
         {/*<p className="text-center text-sm text-gray-800">
           Lat: {center.lat.toFixed(5)}, Lng: {center.lng.toFixed(5)}
         </p>*/}

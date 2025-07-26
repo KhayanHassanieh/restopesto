@@ -6,8 +6,10 @@ import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } fr
 import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
+import RestaurantFooter from '@/components/RestaurantFooter';
 import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
+import { isRestaurantOpen } from '@/utils/openingHours';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function RestaurantPage({ subdomain }) {
@@ -178,6 +180,10 @@ if (restaurantData.isActive === false) {
     quantity = 1,
     isComboSelected = false
   ) => {
+    if (!isRestaurantOpen(restaurant?.openingHours)) {
+      alert('The restaurant is currently closed.');
+      return;
+    }
     if (cartStatus === 'completed') return; // 🔒 Guard
     let activeCartId = cartId;
 
@@ -410,6 +416,13 @@ if (restaurantData.isActive === false) {
         ))}
       </main>
 
+      <RestaurantFooter
+        openingHours={restaurant.openingHours}
+        instagramURL={restaurant.instagramURL}
+        tiktokURL={restaurant.tiktokURL}
+        facebookURL={restaurant.facebookURL}
+        primaryColor={restaurant.theme?.primaryColor || '#7b68ee'}
+      />
 
 
       {/* Item Customization Modal */}
