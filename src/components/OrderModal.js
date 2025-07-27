@@ -23,6 +23,28 @@ export default function OrderModal({
     const [newAddon, setNewAddon] = useState({ name: '', price: 0 });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const modalRef = useRef();
+    const generateTrackLink = (id) => {
+        if (typeof window === 'undefined') return '';
+        if (window.location.hostname.includes('localhost')) {
+            const sub = window.location.pathname.split('/')[1];
+            return `${window.location.origin}/${sub}/track/${id}`;
+        }
+        return `${window.location.origin}/track/${id}`;
+    };
+
+    const handleShare = async () => {
+        const link = generateTrackLink(formData.id);
+        try {
+            if (navigator.share) {
+                await navigator.share({ url: link });
+            } else {
+                await navigator.clipboard.writeText(link);
+                alert('Link copied to clipboard');
+            }
+        } catch (err) {
+            console.error('Share failed', err);
+        }
+    };
 
     // Close modal when clicking outside
     useEffect(() => {
@@ -216,15 +238,24 @@ export default function OrderModal({
                         </h2>
                         <p className="text-sm text-gray-500 mt-1">Order ID: {formData.id}</p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
-                        aria-label="Close modal"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        {mode === 'view' && (
+                            <button onClick={handleShare} className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors" aria-label="Share order">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zM19.5 21a3.5 3.5 0 00-7 0h7zM12 15v-3m0 0l-3 3m3-3l3 3" />
+                                </svg>
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                            aria-label="Close modal"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6">
