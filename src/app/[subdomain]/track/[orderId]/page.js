@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import OrderModal from '@/components/OrderModal';
 import { db } from '@/firebase/firebaseConfig';
 
 export default function TrackOrderPage({ params }) {
-  const { orderId } = params;
+  const { orderId } = use(params);
   const router = useRouter();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
