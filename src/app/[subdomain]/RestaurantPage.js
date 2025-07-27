@@ -1032,6 +1032,14 @@ export default function RestaurantPage({ subdomain }) {
                   try {
                     const finalOrderData = { ...orderData, orderNote };
                     const orderRef = await createOrder(finalOrderData);
+                    let trackUrl = '';
+                    if (typeof window !== 'undefined') {
+                      if (window.location.hostname.includes('localhost')) {
+                        trackUrl = `${window.location.origin}/${subdomain}/track/${orderRef.id}`;
+                      } else {
+                        trackUrl = `${window.location.origin}/track/${orderRef.id}`;
+                      }
+                    }
 
                     // Clear cart locally + remotely
                     setCart([]);
@@ -1054,6 +1062,7 @@ export default function RestaurantPage({ subdomain }) {
                       `Region: ${finalOrderData.region}, Area: ${finalOrderData.area}`,
                       `Address: ${finalOrderData.addressDetails}`,
                       `Location: ${finalOrderData.mapUrl}`,
+                      `Track Order: ${trackUrl}`,
                       finalOrderData.orderNote ? `Order Note: ${finalOrderData.orderNote}` : '',
                       '',
                       ...finalOrderData.items.map((item, i) => {
