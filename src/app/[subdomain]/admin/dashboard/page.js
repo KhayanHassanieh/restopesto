@@ -166,16 +166,17 @@ export default function DashboardPage() {
                     setOrdersData(fallbackOrders);
                 }
 
-                // Fetch menu items
+                // Fetch menu items from the restaurant's menu collection
                 const menuQuery = query(
-                    collection(db, 'menuItems'),
-                    where('restaurantId', '==', restaurantId)
+                    collection(db, 'restaurants', restaurantId, 'menu')
                 );
                 const menuSnapshot = await getDocs(menuQuery);
-                setMenuItems(menuSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })));
+                setMenuItems(
+                    menuSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                );
             }
         } catch (error) {
             console.error('Error fetching data:', error);
