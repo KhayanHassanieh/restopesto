@@ -37,8 +37,9 @@ export default function RestaurantPage({ subdomain }) {
   const [branches, setBranches] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNote, setOrderNote] = useState('');
-const [searchTerm, setSearchTerm] = useState('');
-const [isSearching, setIsSearching] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,11 +56,11 @@ const [isSearching, setIsSearching] = useState(false);
         const restaurantData = restaurantDoc.data();
 
         setRestaurant({ id: restaurantId, ...restaurantDoc.data() });
-// 🛑 If the restaurant is inactive, stop further loading
-if (restaurantData.isActive === false) {
-  setLoading(false);
-  return;
-}
+        // 🛑 If the restaurant is inactive, stop further loading
+        if (restaurantData.isActive === false) {
+          setLoading(false);
+          return;
+        }
         const categoriesSnapshot = await getDocs(
           collection(db, 'restaurants', restaurantId, 'categories')
         );
@@ -172,12 +173,12 @@ if (restaurantData.isActive === false) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-const filteredMenuItems = searchTerm 
-  ? menuItems.filter(item => 
+  const filteredMenuItems = searchTerm
+    ? menuItems.filter(item =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  : menuItems;
+    : menuItems;
   const addToCart = async (
     item,
     selectedAddons = [],
@@ -231,9 +232,9 @@ const filteredMenuItems = searchTerm
       i.itemId === itemWithCustomization.itemId &&
       i.isComboSelected === itemWithCustomization.isComboSelected &&
       JSON.stringify(i.selectedAddons.map(a => a.id).sort()) ===
-        JSON.stringify(itemWithCustomization.selectedAddons.map(a => a.id).sort()) &&
+      JSON.stringify(itemWithCustomization.selectedAddons.map(a => a.id).sort()) &&
       JSON.stringify([...(i.selectedRemovables || [])].sort()) ===
-        JSON.stringify([...(itemWithCustomization.selectedRemovables || [])].sort()) &&
+      JSON.stringify([...(itemWithCustomization.selectedRemovables || [])].sort()) &&
       (i.instructions || '') === (itemWithCustomization.instructions || '')
     );
 
@@ -318,7 +319,7 @@ const filteredMenuItems = searchTerm
           </h1>
           <p className="text-gray-700 text-lg mb-8">is currently out of service.</p>
         </div>
-  
+
         {/* ✅ Powered by Krave Menus */}
         <div className="mt-20 pb-8">
           <p className="text-sm text-gray-500 mb-2">Powered by</p>
@@ -331,7 +332,7 @@ const filteredMenuItems = searchTerm
       </div>
     );
   }
-  
+
   if (!restaurant) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -379,39 +380,39 @@ const filteredMenuItems = searchTerm
 
 
 
-{/* Search Bar */}
-<div className="sticky top-0 z-20 bg-white px-4 py-3 shadow-sm">
-  <div className="relative max-w-xl mx-auto">
-    <input
-      type="text"
-      placeholder="Search menu items..."
-      value={searchTerm}
-      onChange={(e) => {
-        setSearchTerm(e.target.value);
-        setIsSearching(e.target.value.length > 0);
-      }}
-      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800"
-    />
-    <div className="absolute left-3 top-2.5 text-gray-400">
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    </div>
-    {searchTerm && (
-      <button
-        onClick={() => {
-          setSearchTerm('');
-          setIsSearching(false);
-        }}
-        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    )}
-  </div>
-</div>
+      {/* Search Bar */}
+      <div className="sticky top-0 z-20 bg-white px-4 py-3 shadow-sm">
+        <div className="relative max-w-xl mx-auto">
+          <input
+            type="text"
+            placeholder="Search menu items..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setIsSearching(e.target.value.length > 0);
+            }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800"
+          />
+          <div className="absolute left-3 top-2.5 text-gray-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {searchTerm && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setIsSearching(false);
+              }}
+              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
       {/* Categories Navigation */}
       <div className="sticky top-16 z-30 shadow-sm py-3 px-4"
         style={{ backgroundColor: 'var(--theme-background)' }}>
@@ -451,43 +452,43 @@ const filteredMenuItems = searchTerm
           </div>
         </section>*/}
 
-       {/* Category Sections */}
-{isSearching ? (
-  <section className="container ">
-    <h2 className="text-2xl font-bold text-gray-800 mb-6">Search Results</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredMenuItems.map(item => (
-        <MenuItem
-          key={item.id}
-          item={item}
-          onSelect={() => setSelectedItem(item)}
-        />
-      ))}
-    </div>
-    {filteredMenuItems.length === 0 && (
-      <p className="text-gray-600 text-center py-8">No items found matching &quot;{searchTerm}&quot;</p>
-    )}
-  </section>
-) : (
-  menuByCategory.map(category => (
-    <section
-      key={category.id}
-      id={`category-${category.id}`}
-      className="mb-12"
-    >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.name}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {category.items.map(item => (
-          <MenuItem
-            key={item.id}
-            item={item}
-            onSelect={() => setSelectedItem(item)}
-          />
-        ))}
-      </div>
-    </section>
-  ))
-)}
+        {/* Category Sections */}
+        {isSearching ? (
+          <section className="container ">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Search Results</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredMenuItems.map(item => (
+                <MenuItem
+                  key={item.id}
+                  item={item}
+                  onSelect={() => setSelectedItem(item)}
+                />
+              ))}
+            </div>
+            {filteredMenuItems.length === 0 && (
+              <p className="text-gray-600 text-center py-8">No items found matching &quot;{searchTerm}&quot;</p>
+            )}
+          </section>
+        ) : (
+          menuByCategory.map(category => (
+            <section
+              key={category.id}
+              id={`category-${category.id}`}
+              className="mb-12"
+            >
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">{category.name}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {category.items.map(item => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    onSelect={() => setSelectedItem(item)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </main>
 
       <RestaurantFooter
@@ -827,16 +828,66 @@ const filteredMenuItems = searchTerm
           {items.length > 0 && (
             <div className="border-t border-gray-200 pt-4">
               <button
-                onClick={() => {
+                onClick={async () => {
                   const urlWithCart = `${window.location.origin}?cartId=${cartId}`;
                   router.replace(`?cartId=${cartId}`);
-                  navigator.clipboard.writeText(urlWithCart);
-                  alert('Cart link copied!');
+                  try {
+                    await navigator.clipboard.writeText(urlWithCart);
+                    // Show toast notification instead of alert
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  } catch (err) {
+                    console.error('Failed to copy:', err);
+                    // Fallback for browsers that don't support clipboard API
+                    const textArea = document.createElement('textarea');
+                    textArea.value = urlWithCart;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }
                 }}
-                className="text-sm text-blue-600 underline mt-2"
+                className="flex items-center mb-5 gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
               >
-                Share this cart
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                  />
+                </svg>
+                <span className="text-sm font-medium">Share Cart</span>
               </button>
+
+              {/* Toast Notification - Add this near your other state declarations */}
+              {showToast && (
+                <div className="fixed bottom-4 right-4 z-50">
+                  <div className="flex items-center bg-green-500 text-white text-sm font-bold px-4 py-3 rounded-md shadow-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Cart link copied to clipboard!
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Subtotal:</span>
@@ -890,7 +941,7 @@ const filteredMenuItems = searchTerm
         </button>
       )}
       {checkoutStep === 'address' && (
-       
+
         <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-50 flex items-center justify-center p-4">
           <CheckoutForm
             restaurantId={restaurant.id}
@@ -898,7 +949,7 @@ const filteredMenuItems = searchTerm
             onBack={() => setCheckoutStep(null)}
             onComplete={(addressData) => {
               setOrderData({
-                
+
                 ...addressData,
                 items,
                 total: cartTotal * 1.1,
