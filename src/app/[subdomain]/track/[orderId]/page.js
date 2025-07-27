@@ -43,5 +43,5 @@ export default function TrackOrderPage({ params }) {
     return <div className="flex justify-center items-center h-screen">Order not found</div>;
   }
 
-  return <OrderModal order={order} mode="view" onClose={() => router.back()} />;
+  return <OrderModal order={order} mode="view" />;
 }
