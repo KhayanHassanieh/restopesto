@@ -1,6 +1,8 @@
 import RestaurantPage from './RestaurantPage';
+import { use } from 'react';
 
-export default async function Page(props) {
+export default function Page(props) {
   const { params } = props;
-  return <RestaurantPage subdomain={params.subdomain} />;
+  const { subdomain } = use(params);
+  return <RestaurantPage subdomain={subdomain} />;
 }
