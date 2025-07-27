@@ -166,16 +166,37 @@ export default function DashboardPage() {
                     setOrdersData(fallbackOrders);
                 }
 
-                // Fetch menu items
-                const menuQuery = query(
-                    collection(db, 'menuItems'),
-                    where('restaurantId', '==', restaurantId)
+                // Fetch menu items, preferring branch-level menu when available
+                let menuCollection = branchId
+                    ? collection(
+                          db,
+                          'restaurants',
+                          restaurantId,
+                          'branches',
+                          branchId,
+                          'menu'
+                      )
+                    : collection(db, 'restaurants', restaurantId, 'menu');
+
+                let menuSnapshot = await getDocs(menuCollection);
+
+                if (menuSnapshot.empty && branchId) {
+                    // Fallback to restaurant-wide menu if no branch-specific menu
+                    menuCollection = collection(
+                        db,
+                        'restaurants',
+                        restaurantId,
+                        'menu'
+                    );
+                    menuSnapshot = await getDocs(menuCollection);
+                }
+
+                setMenuItems(
+                    menuSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
                 );
-                const menuSnapshot = await getDocs(menuQuery);
-                setMenuItems(menuSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })));
             }
         } catch (error) {
             console.error('Error fetching data:', error);

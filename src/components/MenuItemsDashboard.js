@@ -1,12 +1,28 @@
 export default function MenuItemsDashboard({ menuItems, orders }) {
-    // Calculate sold quantities for each menu item
-    const itemsWithQuantities = menuItems.map(item => {
-      const quantity = orders.reduce((sum, order) => {
-        const orderItem = order.items.find(oi => oi.menuItemId === item.id);
-        return sum + (orderItem ? orderItem.quantity : 0);
-      }, 0);
-      return { ...item, quantitySold: quantity };
-    });
+  // Calculate sold quantities and revenue for each menu item
+  const itemsWithStats = menuItems.map(item => {
+    const { quantity, revenue } = orders.reduce(
+      (acc, order) => {
+        const orderItems = (order.items || []).filter(
+          oi => oi.itemId === item.id
+        );
+        orderItems.forEach(oi => {
+          acc.quantity += oi.quantity || 0;
+          const itemRevenue =
+            oi.finalTotal ||
+            ((oi.basePrice || 0) + (oi.addonsTotal || 0)) * (oi.quantity || 1);
+          acc.revenue += itemRevenue;
+        });
+        return acc;
+      },
+      { quantity: 0, revenue: 0 }
+    );
+
+    return { ...item, quantitySold: quantity, totalRevenue: revenue };
+  });
+
+  // Sort items by quantity sold in descending order
+  itemsWithStats.sort((a, b) => b.quantitySold - a.quantitySold);
   
     return (
       <div className="bg-white shadow rounded-lg p-6">
@@ -22,7 +38,7 @@ export default function MenuItemsDashboard({ menuItems, orders }) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {itemsWithQuantities.map((item) => (
+              {itemsWithStats.map(item => (
                 <tr key={item.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -37,7 +53,7 @@ export default function MenuItemsDashboard({ menuItems, orders }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.price.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.quantitySold}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(item.price * item.quantitySold).toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.totalRevenue.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
