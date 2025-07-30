@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 
 // Dashboard Components
@@ -22,9 +22,10 @@ export default function DashboardPage() {
     const [menuItems, setMenuItems] = useState([]);
     const [indexError, setIndexError] = useState(false);
     const router = useRouter();
+    const unsubRefs = useRef([]);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 router.push('/admin/login');
             } else {
@@ -32,7 +33,11 @@ export default function DashboardPage() {
             }
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+            unsubRefs.current.forEach((fn) => fn && fn());
+            unsubRefs.current = [];
+        };
     }, [router]);
 
     const updateOrderInState = async (orderId, updatedData) => {
@@ -55,15 +60,14 @@ export default function DashboardPage() {
     const fetchRestaurantData = async () => {
         let subdomain = "";
         try {
-            // Get subdomain from URL path
             if (window.location.hostname.includes("localhost")) {
                 const hostParts = window.location.pathname.split('/');
                 subdomain = hostParts[1];
             } else {
                 const hostParts = window.location.hostname.split('.');
-                subdomain = hostParts[0]; // "thecircle" from "thecircle.krave.me"
+                subdomain = hostParts[0];
             }
-            // Fetch restaurant document
+
             const q = query(
                 collection(db, 'restaurants'),
                 where('subdomain', '==', subdomain)
@@ -84,119 +88,114 @@ export default function DashboardPage() {
                     ...restaurantDoc.data()
                 });
 
+                unsubRefs.current.push(
+                    onSnapshot(doc(db, 'restaurants', restaurantId), snap => {
+                        setRestaurantData({ id: snap.id, ...snap.data() });
+                    })
+                );
 
-                // Try to fetch orders with the composite query
-                try {
-                    const ordersQuery = branchId
-                        ? query(
-                              collection(db, 'orders'),
-                              where('restaurantId', '==', restaurantId),
-                              where('branchId', '==', branchId),
-                              orderBy('createdAt', 'desc')
-                          )
-                        : query(
-                              collection(db, 'orders'),
-                              where('restaurantId', '==', restaurantId),
-                              orderBy('createdAt', 'desc')
-                          );
-                    const ordersSnapshot = await getDocs(ordersQuery);
-                    const orders = ordersSnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        const amount = Number(
-                            data.finalTotal ?? data.total ?? data.totalAmount ?? 0
-                        ) || 0;
-                        const items = Array.isArray(data.items) ? data.items : [];
-                        return {
-                            id: doc.id,
-                            fullName: data.fullName || '',
-                            mobileNumber: data.mobileNumber || '',
-                            items,
-                            addressDetails: data.addressDetails || '',
-                            area: data.area || '',
-                            region: data.region || '',
-                            branchId: data.branchId || '',
-                            orderNote: data.orderNote || '',
-                            finalTotal: amount,
-                            totalAmount: amount,
-                            total: amount,
-                            status: data.status || 'Ordered',
-                            createdAt: data.createdAt?.toDate() || new Date(),
-                            updatedAt: data.updatedAt?.toDate() || new Date()
-                        };
-                    });
-                    setOrdersData(orders);
-                    setIndexError(false);
-                } catch (error) {
-                    console.error('Order query error:', error);
-                    if (error.code === 'failed-precondition') {
-                        setIndexError(true);
-                    }
-                    // Fallback: fetch without ordering
-                    const fallbackQuery = branchId
-                        ? query(
-                              collection(db, 'orders'),
-                              where('restaurantId', '==', restaurantId),
-                              where('branchId', '==', branchId)
-                          )
-                        : query(
-                              collection(db, 'orders'),
-                              where('restaurantId', '==', restaurantId)
-                          );
-                    const fallbackSnapshot = await getDocs(fallbackQuery);
-                    const fallbackOrders = fallbackSnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        const amount = Number(
-                            data.finalTotal ?? data.total ?? data.totalAmount ?? 0
-                        ) || 0;
-                        const items = Array.isArray(data.items) ? data.items : [];
-                        return {
-                            id: doc.id,
-                            ...data,
-                            items,
-                            finalTotal: amount,
-                            totalAmount: amount,
-                            total: amount,
-                            status: data.status || 'Ordered',
-                            createdAt: data.createdAt?.toDate() || new Date(),
-                            updatedAt: data.updatedAt?.toDate() || new Date()
-                        };
-                    });
-                    // Sort manually as fallback
-                    fallbackOrders.sort((a, b) => b.createdAt - a.createdAt);
-                    setOrdersData(fallbackOrders);
-                }
-
-                // Fetch menu items, preferring branch-level menu when available
-                let menuCollection = branchId
-                    ? collection(
-                          db,
-                          'restaurants',
-                          restaurantId,
-                          'branches',
-                          branchId,
-                          'menu'
+                const ordersQuery = branchId
+                    ? query(
+                          collection(db, 'orders'),
+                          where('restaurantId', '==', restaurantId),
+                          where('branchId', '==', branchId),
+                          orderBy('createdAt', 'desc')
                       )
+                    : query(
+                          collection(db, 'orders'),
+                          where('restaurantId', '==', restaurantId),
+                          orderBy('createdAt', 'desc')
+                      );
+
+                const ordersUnsub = onSnapshot(
+                    ordersQuery,
+                    snapshot => {
+                        const orders = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            const amount =
+                                Number(
+                                    data.finalTotal ?? data.total ?? data.totalAmount ?? 0
+                                ) || 0;
+                            const items = Array.isArray(data.items) ? data.items : [];
+                            return {
+                                id: doc.id,
+                                fullName: data.fullName || '',
+                                mobileNumber: data.mobileNumber || '',
+                                items,
+                                addressDetails: data.addressDetails || '',
+                                area: data.area || '',
+                                region: data.region || '',
+                                branchId: data.branchId || '',
+                                orderNote: data.orderNote || '',
+                                finalTotal: amount,
+                                totalAmount: amount,
+                                total: amount,
+                                status: data.status || 'Ordered',
+                                createdAt: data.createdAt?.toDate() || new Date(),
+                                updatedAt: data.updatedAt?.toDate() || new Date()
+                            };
+                        });
+                        setOrdersData(orders);
+                        setIndexError(false);
+                    },
+                    err => {
+                        console.error('Order query error:', err);
+                        if (err.code === 'failed-precondition') {
+                            setIndexError(true);
+                        }
+                        const fallbackQuery = branchId
+                            ? query(
+                                  collection(db, 'orders'),
+                                  where('restaurantId', '==', restaurantId),
+                                  where('branchId', '==', branchId)
+                              )
+                            : query(
+                                  collection(db, 'orders'),
+                                  where('restaurantId', '==', restaurantId)
+                              );
+                        const fallbackUnsub = onSnapshot(fallbackQuery, snap => {
+                            const fallbackOrders = snap.docs.map(doc => {
+                                const data = doc.data();
+                                const amount =
+                                    Number(
+                                        data.finalTotal ?? data.total ?? data.totalAmount ?? 0
+                                    ) || 0;
+                                const items = Array.isArray(data.items) ? data.items : [];
+                                return {
+                                    id: doc.id,
+                                    ...data,
+                                    items,
+                                    finalTotal: amount,
+                                    totalAmount: amount,
+                                    total: amount,
+                                    status: data.status || 'Ordered',
+                                    createdAt: data.createdAt?.toDate() || new Date(),
+                                    updatedAt: data.updatedAt?.toDate() || new Date()
+                                };
+                            });
+                            fallbackOrders.sort((a, b) => b.createdAt - a.createdAt);
+                            setOrdersData(fallbackOrders);
+                        });
+                        unsubRefs.current.push(fallbackUnsub);
+                    }
+                );
+                unsubRefs.current.push(ordersUnsub);
+
+                let menuCollection = branchId
+                    ? collection(db, 'restaurants', restaurantId, 'branches', branchId, 'menu')
                     : collection(db, 'restaurants', restaurantId, 'menu');
 
-                let menuSnapshot = await getDocs(menuCollection);
-
+                const menuSnapshot = await getDocs(menuCollection);
                 if (menuSnapshot.empty && branchId) {
-                    // Fallback to restaurant-wide menu if no branch-specific menu
-                    menuCollection = collection(
-                        db,
-                        'restaurants',
-                        restaurantId,
-                        'menu'
-                    );
-                    menuSnapshot = await getDocs(menuCollection);
+                    menuCollection = collection(db, 'restaurants', restaurantId, 'menu');
                 }
 
-                setMenuItems(
-                    menuSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                );
+                const menuUnsub = onSnapshot(menuCollection, snap => {
+                    setMenuItems(
+                        snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                    );
+                });
+                unsubRefs.current.push(menuUnsub);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
