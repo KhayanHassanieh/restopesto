@@ -1,41 +1,31 @@
-export function isRestaurantOpen(openingHoursStr) {
-  if (!openingHoursStr) return true;
-  const regex = /(\d{1,2}:\d{2})(?:\s*(AM|PM))?\s*-\s*(\d{1,2}:\d{2})(?:\s*(AM|PM))?/i;
-  const match = openingHoursStr.match(regex);
-  if (!match) {
-    return true; // if can't parse, assume open
-  }
-  let [, openTime, openPeriod, closeTime, closePeriod] = match;
+export const daysOfWeek = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 
-  function parseTime(t, period) {
-    let [hours, minutes] = t.split(':').map(Number);
-    if (period) {
-      if (period.toUpperCase() === 'PM' && hours !== 12) {
-        hours += 12;
-      }
-      if (period.toUpperCase() === 'AM' && hours === 12) {
-        hours = 0;
-      }
-    }
-    return { hours, minutes };
-  }
-
-  const open = parseTime(openTime, openPeriod);
-  const close = parseTime(closeTime, closePeriod);
-
+export function isRestaurantOpen(hours) {
+  if (!hours || typeof hours !== 'object') return true;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date();
-  const openDate = new Date(now);
-  openDate.setHours(open.hours, open.minutes, 0, 0);
-  const closeDate = new Date(now);
-  closeDate.setHours(close.hours, close.minutes, 0, 0);
-
+  const localNow = new Date(now.toLocaleString('en-US', { timeZone }));
+  const day = localNow.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const dayHours = hours[day];
+  if (!dayHours || !dayHours.open || !dayHours.close) return true;
+  if (dayHours.open === dayHours.close) return false;
+  const [openH, openM] = dayHours.open.split(':').map(Number);
+  const [closeH, closeM] = dayHours.close.split(':').map(Number);
+  const openDate = new Date(localNow);
+  openDate.setHours(openH, openM, 0, 0);
+  const closeDate = new Date(localNow);
+  closeDate.setHours(closeH, closeM, 0, 0);
   if (closeDate <= openDate) {
-    // handle overnight hours, e.g., 18:00 - 02:00
-    if (now >= openDate) {
-      return true;
-    }
+    if (localNow >= openDate) return true;
     closeDate.setDate(closeDate.getDate() + 1);
   }
+  return localNow >= openDate && localNow <= closeDate;
+}
 
-  return now >= openDate && now <= closeDate;
+export function formatTime(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const d = new Date();
+  d.setHours(parseInt(h, 10), parseInt(m, 10));
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }

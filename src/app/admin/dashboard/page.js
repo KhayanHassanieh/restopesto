@@ -34,7 +34,6 @@ function DashboardPage() {
   const [editName, setEditName] = useState('');
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editOpeningHours, setEditOpeningHours] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
 
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
@@ -220,7 +219,6 @@ function DashboardPage() {
       setEditName(restaurant.name);
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
-      setEditOpeningHours(restaurant.openingHours || '');
       setEditInstagramURL(restaurant.instagramURL || '');
       setEditTiktokURL(restaurant.tiktokURL || '');
       setEditFacebookURL(restaurant.facebookURL || '');
@@ -283,7 +281,7 @@ function DashboardPage() {
         name: updatedData.name || editName,
         subdomain: updatedData.subdomain || editSubdomain,
         phone: updatedData.phone || editPhone,
-        openingHours: updatedData.openingHours || editOpeningHours,
+        ...(updatedData.hours && { hours: updatedData.hours }),
         instagramURL: updatedData.instagramURL || editInstagramURL,
         tiktokURL: updatedData.tiktokURL || editTiktokURL,
         facebookURL: updatedData.facebookURL || editFacebookURL,
@@ -775,7 +773,6 @@ function DashboardPage() {
                       name: setEditName,
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
-                      openingHours: setEditOpeningHours,
                       expiresAt: setEditExpiresAt,
                       username: setEditUsername,
                       password: setEditPassword,
@@ -795,7 +792,6 @@ function DashboardPage() {
                     setAccentColor={setAccentColor}
                     editUsername={editUsername}
                     editPassword={editPassword}
-                    editOpeningHours={editOpeningHours}
                     editInstagramURL={editInstagramURL}
                     editTiktokURL={editTiktokURL}
                     editFacebookURL={editFacebookURL}

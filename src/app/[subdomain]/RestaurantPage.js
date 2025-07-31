@@ -10,6 +10,7 @@ import RestaurantFooter from '@/components/RestaurantFooter';
 import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity, removeItemFromCart } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { isRestaurantOpen } from '@/utils/openingHours';
+import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function RestaurantPage({ subdomain }) {
@@ -41,6 +42,7 @@ export default function RestaurantPage({ subdomain }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const router = useRouter();
+  const isOpen = isRestaurantOpen(restaurant?.hours);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -196,8 +198,8 @@ export default function RestaurantPage({ subdomain }) {
     isComboSelected = false,
     customInstructions = ''
   ) => {
-    if (!isRestaurantOpen(restaurant?.openingHours)) {
-      alert('The restaurant is currently closed.');
+    if (!isRestaurantOpen(restaurant?.hours)) {
+      toast.error("We're currently closed.");
       return;
     }
     if (cartStatus === 'completed') return; // 🔒 Guard
@@ -386,8 +388,11 @@ export default function RestaurantPage({ subdomain }) {
         </div>
       </header>
 
-
-
+      {!isOpen && (
+        <div className="bg-red-500 text-white text-center py-2">
+          We&apos;re currently closed.
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="sticky top-0 z-20 bg-white px-4 py-3 shadow-sm">
@@ -501,7 +506,7 @@ export default function RestaurantPage({ subdomain }) {
       </main>
 
       <RestaurantFooter
-        openingHours={restaurant.openingHours}
+        hours={restaurant.hours}
         instagramURL={restaurant.instagramURL}
         tiktokURL={restaurant.tiktokURL}
         facebookURL={restaurant.facebookURL}
@@ -691,6 +696,7 @@ export default function RestaurantPage({ subdomain }) {
 
                 {/* Add to Cart */}
                 <button
+                  disabled={!isOpen}
                   onClick={() => {
                     addToCart(
                       selectedItem,
@@ -701,7 +707,8 @@ export default function RestaurantPage({ subdomain }) {
                       instructions
                     );
                   }}
-                  className="hover:brightness-120 text-white py-2 px-6 rounded-lg font-medium transition-colors" style={{
+                  className={`hover:brightness-120 text-white py-2 px-6 rounded-lg font-medium transition-colors ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  style={{
                     background: 'var(--theme-primary)',
 
                   }}
