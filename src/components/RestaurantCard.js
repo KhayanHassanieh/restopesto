@@ -3,6 +3,7 @@ import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 import { SketchPicker } from 'react-color';
 import BranchManager from '@/components/BranchManager';
+import { daysOfWeek } from '@/utils/openingHours';
 export default function RestaurantCard({
   restaurant,
   branches,
@@ -11,7 +12,6 @@ export default function RestaurantCard({
   editName,
   editSubdomain,
   editPhone,
-  editOpeningHours,
   editExpiresAt,
   onToggleBranches,
   editUsername,
@@ -34,6 +34,24 @@ export default function RestaurantCard({
   const [previewBackgroundImage, setPreviewBackgroundImage] = useState(null);
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
+  const defaultHours = daysOfWeek.reduce((acc, d) => ({
+    ...acc,
+    [d]: { open: '', close: '' }
+  }), {});
+  const [hours, setHours] = useState(restaurant.hours || defaultHours);
+
+  useEffect(() => {
+    if (showEdit) {
+      setHours(restaurant.hours || defaultHours);
+    }
+  }, [showEdit, restaurant.hours, defaultHours]);
+
+  const handleHoursChange = (day, field, value) => {
+    setHours(prev => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value }
+    }));
+  };
   const showEdit = editMode === restaurant.id;
   const showBranches = openBranchId === restaurant.id;
   // Set initial expiration date when entering edit mode
@@ -50,7 +68,7 @@ export default function RestaurantCard({
       ...(editName && { name: editName }),
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
-      ...(editOpeningHours && { openingHours: editOpeningHours }),
+      hours,
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
       ...(editUsername && { username: editUsername }),
       ...(editPassword && { password: editPassword }),
@@ -294,12 +312,26 @@ export default function RestaurantCard({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
-              <input
-                type="text"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
-                value={editOpeningHours ?? ''}
-                onChange={(e) => onEditChange.openingHours(e.target.value)}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {daysOfWeek.map(day => (
+                  <div key={day} className="flex items-center space-x-2">
+                    <span className="w-20 capitalize text-gray-700 text-sm">{day}</span>
+                    <input
+                      type="time"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                      value={hours[day]?.open || ''}
+                      onChange={(e) => handleHoursChange(day, 'open', e.target.value)}
+                    />
+                    <span>-</span>
+                    <input
+                      type="time"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                      value={hours[day]?.close || ''}
+                      onChange={(e) => handleHoursChange(day, 'close', e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">
