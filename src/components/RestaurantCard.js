@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SketchPicker } from 'react-color';
 import BranchManager from '@/components/BranchManager';
 import { daysOfWeek } from '@/utils/openingHours';
+import { useMemo } from 'react';
 export default function RestaurantCard({
   restaurant,
   branches,
@@ -34,17 +35,25 @@ export default function RestaurantCard({
   const [previewBackgroundImage, setPreviewBackgroundImage] = useState(null);
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
-  const defaultHours = daysOfWeek.reduce((acc, d) => ({
+  const defaultHours = useMemo(() => {
+  return daysOfWeek.reduce((acc, d) => ({
     ...acc,
     [d]: { open: '', close: '' }
   }), {});
+}, []);
   const [hours, setHours] = useState(restaurant.hours || defaultHours);
-
+ const showEdit = editMode === restaurant.id;
+  const showBranches = openBranchId === restaurant.id;
   useEffect(() => {
-    if (showEdit) {
-      setHours(restaurant.hours || defaultHours);
-    }
-  }, [showEdit, restaurant.hours, defaultHours]);
+  if (showEdit) {
+    setHours(prev => {
+      if (prev === restaurant.hours || JSON.stringify(prev) === JSON.stringify(restaurant.hours)) {
+        return prev;
+      }
+      return restaurant.hours || defaultHours;
+    });
+  }
+}, [showEdit]);
 
   const handleHoursChange = (day, field, value) => {
     setHours(prev => ({
@@ -52,8 +61,7 @@ export default function RestaurantCard({
       [day]: { ...prev[day], [field]: value }
     }));
   };
-  const showEdit = editMode === restaurant.id;
-  const showBranches = openBranchId === restaurant.id;
+ 
   // Set initial expiration date when entering edit mode
   const handleBackgroundImageChange = (e) => {
     const file = e.target.files[0];
