@@ -385,11 +385,10 @@ export default function RestaurantPage({ subdomain }) {
           </h1>
         </div>
       </header>
+      {restaurant.openingHours && (
+        <p className="text-center text-gray-700 mt-2">Opening Hours: {restaurant.openingHours}</p>
+      )}
 
-
-
-
-      {/* Search Bar */}
       <div className="sticky top-0 z-20 bg-white px-4 py-3 shadow-sm">
         <div className="relative max-w-xl mx-auto">
           <input
