@@ -195,10 +195,19 @@ export default function OrderModal({
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const itemsWithTotals = formData.cart.map(item => ({
+                ...item,
+                finalTotal: ((item.basePrice || 0) + (item.addonsTotal || 0)) *
+                    (item.quantity || 1)
+            }));
+
             const orderToSave = {
                 ...formData,
-                items: formData.cart,
-                finalTotal: calculateOrderTotal()
+                items: itemsWithTotals,
+                finalTotal: itemsWithTotals.reduce(
+                    (sum, i) => sum + (i.finalTotal || 0),
+                    0
+                )
             };
             delete orderToSave.cart;
             await onSave(orderToSave.id, orderToSave);
