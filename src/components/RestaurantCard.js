@@ -11,7 +11,8 @@ export default function RestaurantCard({
   editName,
   editSubdomain,
   editPhone,
-  editOpeningHours,
+  editOpenTime,
+  editCloseTime,
   editExpiresAt,
   onToggleBranches,
   editUsername,
@@ -34,8 +35,14 @@ export default function RestaurantCard({
   const [previewBackgroundImage, setPreviewBackgroundImage] = useState(null);
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
+  const [localOpenTime, setLocalOpenTime] = useState(editOpenTime || '');
+  const [localCloseTime, setLocalCloseTime] = useState(editCloseTime || '');
   const showEdit = editMode === restaurant.id;
   const showBranches = openBranchId === restaurant.id;
+  useEffect(() => {
+    setLocalOpenTime(editOpenTime || '');
+    setLocalCloseTime(editCloseTime || '');
+  }, [editOpenTime, editCloseTime]);
   // Set initial expiration date when entering edit mode
   const handleBackgroundImageChange = (e) => {
     const file = e.target.files[0];
@@ -50,7 +57,7 @@ export default function RestaurantCard({
       ...(editName && { name: editName }),
       ...(editSubdomain && { subdomain: editSubdomain }),
       ...(editPhone && { phone: editPhone }),
-      ...(editOpeningHours && { openingHours: editOpeningHours }),
+      ...(localOpenTime && localCloseTime && { openingHours: `${localOpenTime} - ${localCloseTime}` }),
       ...(editExpiresAt && { expiresAt: new Date(editExpiresAt) }),
       ...(editUsername && { username: editUsername }),
       ...(editPassword && { password: editPassword }),
@@ -294,12 +301,21 @@ export default function RestaurantCard({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
-              <input
-                type="text"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800 placeholder-gray-400"
-                value={editOpeningHours ?? ''}
-                onChange={(e) => onEditChange.openingHours(e.target.value)}
-              />
+              <div className="flex space-x-2 mt-1">
+                <input
+                  type="time"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                  value={localOpenTime}
+                  onChange={(e) => { setLocalOpenTime(e.target.value); onEditChange.openTime(e.target.value); }}
+                />
+                <span className="self-center">-</span>
+                <input
+                  type="time"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+                  value={localCloseTime}
+                  onChange={(e) => { setLocalCloseTime(e.target.value); onEditChange.closeTime(e.target.value); }}
+                />
+              </div>
             </div>
             <div>
               <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">

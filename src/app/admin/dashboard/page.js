@@ -25,7 +25,9 @@ function DashboardPage() {
   const [name, setName] = useState('');
   const [subdomain, setSubdomain] = useState('');
   const [phone, setPhone] = useState('');
-  const [openingHours, setOpeningHours] = useState('');
+  const [openTime, setOpenTime] = useState('');
+  const [closeTime, setCloseTime] = useState('');
+  const openingHours = openTime && closeTime ? `${openTime} - ${closeTime}` : '';
   const [instagramURL, setInstagramURL] = useState('');
   const [tiktokURL, setTiktokURL] = useState('');
   const [facebookURL, setFacebookURL] = useState('');
@@ -34,7 +36,8 @@ function DashboardPage() {
   const [editName, setEditName] = useState('');
   const [editSubdomain, setEditSubdomain] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editOpeningHours, setEditOpeningHours] = useState('');
+  const [editOpenTime, setEditOpenTime] = useState('');
+  const [editCloseTime, setEditCloseTime] = useState('');
   const [editExpiresAt, setEditExpiresAt] = useState('');
 
   const [backgroundImageFile, setBackgroundImageFile] = useState(null);
@@ -178,7 +181,8 @@ function DashboardPage() {
       setName('');
       setSubdomain('');
       setPhone('');
-      setOpeningHours('');
+      setOpenTime('');
+      setCloseTime('');
       setInstagramURL('');
       setTiktokURL('');
       setFacebookURL('');
@@ -220,7 +224,14 @@ function DashboardPage() {
       setEditName(restaurant.name);
       setEditSubdomain(restaurant.subdomain);
       setEditPhone(restaurant.phone);
-      setEditOpeningHours(restaurant.openingHours || '');
+      if (restaurant.openingHours) {
+        const [open, close] = restaurant.openingHours.split('-').map(s => s.trim());
+        setEditOpenTime(open || '');
+        setEditCloseTime(close || '');
+      } else {
+        setEditOpenTime('');
+        setEditCloseTime('');
+      }
       setEditInstagramURL(restaurant.instagramURL || '');
       setEditTiktokURL(restaurant.tiktokURL || '');
       setEditFacebookURL(restaurant.facebookURL || '');
@@ -283,7 +294,7 @@ function DashboardPage() {
         name: updatedData.name || editName,
         subdomain: updatedData.subdomain || editSubdomain,
         phone: updatedData.phone || editPhone,
-        openingHours: updatedData.openingHours || editOpeningHours,
+        openingHours: updatedData.openingHours || (editOpenTime && editCloseTime ? `${editOpenTime} - ${editCloseTime}` : ''),
         instagramURL: updatedData.instagramURL || editInstagramURL,
         tiktokURL: updatedData.tiktokURL || editTiktokURL,
         facebookURL: updatedData.facebookURL || editFacebookURL,
@@ -516,15 +527,22 @@ function DashboardPage() {
               />
             </div>
             <div className="sm:col-span-3">
-              <label htmlFor="openingHours" className="block text-sm font-medium text-gray-700">Opening Hours</label>
-              <input
-                type="text"
-                name="openingHours"
-                id="openingHours"
-                value={openingHours}
-                onChange={(e) => setOpeningHours(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 placeholder:text-gray-400 text-gray-800"
-              />
+              <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
+              <div className="flex space-x-2 mt-1">
+                <input
+                  type="time"
+                  value={openTime}
+                  onChange={(e) => setOpenTime(e.target.value)}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-800"
+                />
+                <span className="self-center">-</span>
+                <input
+                  type="time"
+                  value={closeTime}
+                  onChange={(e) => setCloseTime(e.target.value)}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-800"
+                />
+              </div>
             </div>
             <div className="sm:col-span-3">
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -771,11 +789,12 @@ function DashboardPage() {
                     editExpiresAt={editExpiresAt}
                     onToggleBranches={handleToggleBranches}
                     onToggleEdit={() => toggleEdit(r)}
-                  onEditChange={{
+                    onEditChange={{
                       name: setEditName,
                       subdomain: setEditSubdomain,
                       phone: setEditPhone,
-                      openingHours: setEditOpeningHours,
+                      openTime: setEditOpenTime,
+                      closeTime: setEditCloseTime,
                       expiresAt: setEditExpiresAt,
                       username: setEditUsername,
                       password: setEditPassword,
@@ -795,7 +814,8 @@ function DashboardPage() {
                     setAccentColor={setAccentColor}
                     editUsername={editUsername}
                     editPassword={editPassword}
-                    editOpeningHours={editOpeningHours}
+                    editOpenTime={editOpenTime}
+                    editCloseTime={editCloseTime}
                     editInstagramURL={editInstagramURL}
                     editTiktokURL={editTiktokURL}
                     editFacebookURL={editFacebookURL}
