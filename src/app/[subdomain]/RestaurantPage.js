@@ -116,7 +116,16 @@ export default function RestaurantPage({ subdomain }) {
         setBranches(processedBranches);
 
         if (incomingCartId) {
-          setCartId(incomingCartId);
+          try {
+            const existingCart = await getCart(incomingCartId);
+            if (existingCart.status === 'completed') {
+              router.replace('/');
+            } else {
+              setCartId(incomingCartId);
+            }
+          } catch (err) {
+            console.error('Failed to fetch cart', err);
+          }
         }
       } catch (error) {
         console.error('Error:', error);
