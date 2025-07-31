@@ -3,12 +3,11 @@ import { useState, useEffect } from 'react';
 import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 
-export default function CheckoutForm({ 
+export default function CheckoutForm({
   restaurantId,
-  cartTotal, 
-  onBack, 
-  onComplete, 
-  defaultRegion = 'Mount Lebanon' 
+  onBack,
+  onComplete,
+  defaultRegion = 'Mount Lebanon'
 }) {
   const [branches, setBranches] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(true);

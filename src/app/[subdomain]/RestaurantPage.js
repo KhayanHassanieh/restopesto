@@ -902,13 +902,9 @@ export default function RestaurantPage({ subdomain }) {
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Tax:</span>
-                <span className="text-gray-800">${(cartTotal * 0.1).toFixed(2)}</span>
-              </div>
               <div className="flex justify-between mb-4 font-bold">
                 <span className="text-gray-800">Total:</span>
-                <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
+                <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
               </div>
 
               {/* ✅ Disable checkout if ordered */}
@@ -954,14 +950,13 @@ export default function RestaurantPage({ subdomain }) {
         <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-50 flex items-center justify-center p-4">
           <CheckoutForm
             restaurantId={restaurant.id}
-            cartTotal={cartTotal * 1.1}
             onBack={() => setCheckoutStep(null)}
             onComplete={(addressData) => {
               setOrderData({
 
                 ...addressData,
                 items,
-                total: cartTotal * 1.1,
+                finalTotal: cartTotal,
                 restaurantId: restaurant.id,
                 cartId
               });
@@ -1007,13 +1002,9 @@ export default function RestaurantPage({ subdomain }) {
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Tax (10%):</span>
-                <span className="text-gray-800">${(cartTotal * 0.1).toFixed(2)}</span>
-              </div>
               <div className="flex justify-between mb-4 font-bold">
                 <span className="text-gray-800">Total:</span>
-                <span className="text-gray-800">${(cartTotal * 1.1).toFixed(2)}</span>
+                <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
               </div>
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1082,7 +1073,7 @@ export default function RestaurantPage({ subdomain }) {
                         return [line, addons, removables, note].filter(Boolean).join('\n');
                       }),
                       '',
-                      `Total: $${finalOrderData.total.toFixed(2)}`
+                      `Total: $${finalOrderData.finalTotal.toFixed(2)}`
                     ];
 
                     const encodedMessage = encodeURIComponent(messageLines.filter(Boolean).join('\n'));

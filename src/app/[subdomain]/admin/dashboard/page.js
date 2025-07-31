@@ -102,7 +102,7 @@ export default function DashboardPage() {
                     const ordersSnapshot = await getDocs(ordersQuery);
                     const orders = ordersSnapshot.docs.map(doc => {
                         const data = doc.data();
-                        const amount = Number(
+                        const finalTotal = Number(
                             data.finalTotal ?? data.total ?? data.totalAmount ?? 0
                         ) || 0;
                         const items = Array.isArray(data.items) ? data.items : [];
@@ -116,9 +116,7 @@ export default function DashboardPage() {
                             region: data.region || '',
                             branchId: data.branchId || '',
                             orderNote: data.orderNote || '',
-                            finalTotal: amount,
-                            totalAmount: amount,
-                            total: amount,
+                            finalTotal,
                             status: data.status || 'Ordered',
                             createdAt: data.createdAt?.toDate() || new Date(),
                             updatedAt: data.updatedAt?.toDate() || new Date()
@@ -145,7 +143,7 @@ export default function DashboardPage() {
                     const fallbackSnapshot = await getDocs(fallbackQuery);
                     const fallbackOrders = fallbackSnapshot.docs.map(doc => {
                         const data = doc.data();
-                        const amount = Number(
+                        const finalTotal = Number(
                             data.finalTotal ?? data.total ?? data.totalAmount ?? 0
                         ) || 0;
                         const items = Array.isArray(data.items) ? data.items : [];
@@ -153,9 +151,7 @@ export default function DashboardPage() {
                             id: doc.id,
                             ...data,
                             items,
-                            finalTotal: amount,
-                            totalAmount: amount,
-                            total: amount,
+                            finalTotal,
                             status: data.status || 'Ordered',
                             createdAt: data.createdAt?.toDate() || new Date(),
                             updatedAt: data.updatedAt?.toDate() || new Date()
