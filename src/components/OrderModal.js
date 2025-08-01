@@ -195,9 +195,14 @@ export default function OrderModal({
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const updatedItems = formData.cart.map(item => ({
+                ...item,
+                finalTotal: calculateItemTotal(item)
+            }));
+
             const orderToSave = {
                 ...formData,
-                items: formData.cart,
+                items: updatedItems,
                 finalTotal: calculateOrderTotal()
             };
             delete orderToSave.cart;
