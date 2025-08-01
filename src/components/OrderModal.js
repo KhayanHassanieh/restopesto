@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/firebaseConfig';
 
 const STATUSES = [
@@ -22,7 +22,15 @@ export default function OrderModal({
     const [editingAddonsIndex, setEditingAddonsIndex] = useState(null);
     const [newAddon, setNewAddon] = useState({ name: '', price: 0 });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const menuByCategory = categories.map(cat => ({
+        ...cat,
+        items: menuItems.filter(item => item.typeId === cat.id)
+    }));
     const modalRef = useRef();
+    const dropdownRef = useRef();
     const generateTrackLink = (id) => {
         if (typeof window === 'undefined') return '';
         if (window.location.hostname.includes('localhost')) {
@@ -83,6 +91,35 @@ export default function OrderModal({
             setLoading(false);
         }
     }, [originalOrder]);
+
+    useEffect(() => {
+        const handleClick = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    useEffect(() => {
+        const fetchMenuData = async () => {
+            if (!originalOrder?.restaurantId || mode !== 'edit') return;
+            try {
+                const catsSnap = await getDocs(
+                    collection(db, 'restaurants', originalOrder.restaurantId, 'categories')
+                );
+                const menuSnap = await getDocs(
+                    collection(db, 'restaurants', originalOrder.restaurantId, 'menu')
+                );
+                setCategories(catsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                setMenuItems(menuSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            } catch (err) {
+                console.error('Error fetching menu data:', err);
+            }
+        };
+        fetchMenuData();
+    }, [originalOrder, mode]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -189,6 +226,24 @@ export default function OrderModal({
             };
             return { ...prev, cart: updatedCart };
         });
+    };
+
+    const handleAddMenuItem = (menuItem) => {
+        setFormData(prev => ({
+            ...prev,
+            cart: [
+                ...prev.cart,
+                {
+                    name: menuItem.name,
+                    basePrice: Number(menuItem.price) || 0,
+                    addonsTotal: 0,
+                    quantity: 1,
+                    selectedAddons: [],
+                    selectedRemovables: []
+                }
+            ]
+        }));
+        setShowDropdown(false);
     };
 
     const handleSubmit = async (e) => {
@@ -436,29 +491,43 @@ export default function OrderModal({
                                 </svg>
                                 Order Items
                             </h3>
-                            {mode === 'edit' && formData.cart.length === 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            cart: [...prev.cart, {
-                                                name: 'New Item',
-                                                basePrice: 0,
-                                                addonsTotal: 0,
-                                                quantity: 1,
-                                                selectedAddons: [],
-                                                selectedRemovables: []
-                                            }]
-                                        }));
-                                    }}
-                                    className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center transition-colors cursor-pointer"
-                                >
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    Add Item
-                                </button>
+                            {mode === 'edit' && (
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDropdown(prev => !prev)}
+                                        className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center transition-colors cursor-pointer"
+                                    >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Add Item
+                                    </button>
+                                    {showDropdown && (
+                                        <div ref={dropdownRef} className="absolute right-0 mt-2 bg-white border rounded shadow z-20 min-w-40">
+                                            {menuByCategory.map(cat => (
+                                                <div key={cat.id} className="group relative">
+                                                    <div className="px-3 py-2 hover:bg-gray-100 cursor-pointer whitespace-nowrap">
+                                                        {cat.name}
+                                                    </div>
+                                                    {cat.items.length > 0 && (
+                                                        <div className="absolute top-0 left-full hidden group-hover:block bg-white border rounded shadow z-30 min-w-40">
+                                                            {cat.items.map(item => (
+                                                                <div
+                                                                    key={item.id}
+                                                                    onClick={() => handleAddMenuItem(item)}
+                                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer whitespace-nowrap"
+                                                                >
+                                                                    {item.name}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -470,25 +539,39 @@ export default function OrderModal({
                                 <h4 className="mt-2 text-sm font-medium text-gray-900">No items in this order</h4>
                                 <p className="mt-1 text-sm text-gray-500">Add items to create an order</p>
                                 {mode === 'edit' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                cart: [...prev.cart, {
-                                                    name: 'New Item',
-                                                    basePrice: 0,
-                                                    addonsTotal: 0,
-                                                    quantity: 1,
-                                                    selectedAddons: [],
-                                                    selectedRemovables: []
-                                                }]
-                                            }));
-                                        }}
-                                        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors cursor-pointer"
-                                    >
-                                        Add First Item
-                                    </button>
+                                    <div className="relative mt-4 inline-block">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDropdown(prev => !prev)}
+                                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors cursor-pointer"
+                                        >
+                                            Add First Item
+                                        </button>
+                                        {showDropdown && (
+                                            <div ref={dropdownRef} className="absolute left-0 mt-2 bg-white border rounded shadow z-20 min-w-40">
+                                                {menuByCategory.map(cat => (
+                                                    <div key={cat.id} className="group relative">
+                                                        <div className="px-3 py-2 hover:bg-gray-100 cursor-pointer whitespace-nowrap">
+                                                            {cat.name}
+                                                        </div>
+                                                        {cat.items.length > 0 && (
+                                                            <div className="absolute top-0 left-full hidden group-hover:block bg-white border rounded shadow z-30 min-w-40">
+                                                                {cat.items.map(item => (
+                                                                    <div
+                                                                        key={item.id}
+                                                                        onClick={() => handleAddMenuItem(item)}
+                                                                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer whitespace-nowrap"
+                                                                    >
+                                                                        {item.name}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ) : (
