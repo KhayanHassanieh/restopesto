@@ -24,6 +24,7 @@ export default function RestaurantCard({
   onEditChange,
   onUpdate,
   onToggleActive,
+  onToggleOpen,
   primaryColor,
   setPrimaryColor,
   backgroundColor,
@@ -159,6 +160,13 @@ export default function RestaurantCard({
                 {restaurant.isActive ? 'Active' : 'Inactive'}
 
               </span>
+              <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${restaurant.isOpen !== false
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+                }`}>
+                {restaurant.isOpen !== false ? 'Open' : 'Closed'}
+
+              </span>
 
             </div>
 
@@ -237,6 +245,22 @@ export default function RestaurantCard({
               )}
             </svg>
             {restaurant.isActive ? 'Disable' : 'Enable'}
+          </button>
+          <button
+            onClick={() => onToggleOpen(restaurant.id, restaurant.isOpen !== false)}
+            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee] ${restaurant.isOpen !== false
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
+          >
+            <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              {restaurant.isOpen !== false ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              )}
+            </svg>
+            {restaurant.isOpen !== false ? 'Close' : 'Open'}
           </button>
         </div>
       </div>
