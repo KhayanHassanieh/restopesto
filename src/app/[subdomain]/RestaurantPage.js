@@ -42,7 +42,7 @@ export default function RestaurantPage({ subdomain }) {
   const [isSearching, setIsSearching] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const router = useRouter();
-  const isOpen = isRestaurantOpen(restaurant?.hours);
+  const isOpen = restaurant ? (isRestaurantOpen(restaurant.hours) && restaurant.isOpen !== false) : false;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,7 +198,7 @@ export default function RestaurantPage({ subdomain }) {
     isComboSelected = false,
     customInstructions = ''
   ) => {
-    if (!isRestaurantOpen(restaurant?.hours)) {
+    if (!isOpen) {
       toast.error("We're currently closed.");
       return;
     }

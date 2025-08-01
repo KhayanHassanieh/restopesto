@@ -60,6 +60,7 @@ function DashboardPage() {
         return {
           id: doc.id,
           ...restaurantData,
+            isOpen: restaurantData.isOpen !== false,
           expiresAt: restaurantData.expiresAt?.toDate
             ? restaurantData.expiresAt
             : restaurantData.expiresAt
@@ -152,6 +153,7 @@ function DashboardPage() {
 
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: true,
+        isOpen: true,
         logoUrl: uploadedLogoUrl,
         backgroundImageUrl: uploadedBgUrl,
         theme: {
@@ -208,6 +210,14 @@ function DashboardPage() {
       fetchRestaurants();
     } catch (err) {
       console.error('Toggle failed:', err);
+    }
+  };
+  const handleToggleOpen = async (id, currentValue) => {
+    try {
+      await updateDoc(doc(db, "restaurants", id), { isOpen: !currentValue });
+      fetchRestaurants();
+    } catch (err) {
+      console.error("Toggle failed:", err);
     }
   };
 
@@ -784,6 +794,7 @@ function DashboardPage() {
                     onToggleActive={handleToggleActive}
 
 
+                    onToggleOpen={handleToggleOpen}
                     primaryColor={primaryColor}
                     setPrimaryColor={setPrimaryColor}
                     backgroundColor={backgroundColor}

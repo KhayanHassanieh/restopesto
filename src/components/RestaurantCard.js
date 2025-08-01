@@ -24,6 +24,7 @@ export default function RestaurantCard({
   onEditChange,
   onUpdate,
   onToggleActive,
+  onToggleOpen,
   primaryColor,
   setPrimaryColor,
   backgroundColor,
@@ -72,6 +73,11 @@ export default function RestaurantCard({
   };
   const handleUpdate = (e) => {
     e.preventDefault();
+      const hours = hoursEntries.reduce((acc, { day, open, close }) => {
+      acc[day] = { open, close };
+      return acc;
+    }, {});
+    
     onUpdate({
       ...(editName && { name: editName }),
       ...(editSubdomain && { subdomain: editSubdomain }),
@@ -131,6 +137,41 @@ export default function RestaurantCard({
     }
   };
 
+   // Enhanced hours state and handlers
+  const [hoursEntries, setHoursEntries] = useState(
+    Object.entries(restaurant.hours || defaultHours).map(([day, times]) => ({
+      day,
+      open: times.open,
+      close: times.close
+    }))
+  );
+ const availableDays = daysOfWeek.filter(
+    day => !hoursEntries.some(entry => entry.day === day)
+  );
+
+ const handleAddHoursEntry = () => {
+    if (availableDays.length > 0) {
+      setHoursEntries(prev => [
+        ...prev,
+        { day: availableDays[0], open: '', close: '' }
+      ]);
+    }
+  };
+
+  const handleRemoveHoursEntry = (index) => {
+    setHoursEntries(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleHoursEntryChange = (index, field, value) => {
+    setHoursEntries(prev =>
+      prev.map((entry, i) =>
+        i === index ? { ...entry, [field]: value } : entry
+      )
+    );
+  };
+
+  // Convert hoursEntries back to hours object before saving
+ 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-5">
@@ -157,6 +198,13 @@ export default function RestaurantCard({
                 : 'bg-gray-100 text-gray-800'
                 }`}>
                 {restaurant.isActive ? 'Active' : 'Inactive'}
+
+              </span>
+              <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${restaurant.isOpen !== false
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+                }`}>
+                {restaurant.isOpen !== false ? 'Open' : 'Closed'}
 
               </span>
 
@@ -238,6 +286,22 @@ export default function RestaurantCard({
             </svg>
             {restaurant.isActive ? 'Disable' : 'Enable'}
           </button>
+          <button
+            onClick={() => onToggleOpen(restaurant.id, restaurant.isOpen !== false)}
+            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee] ${restaurant.isOpen !== false
+              ? 'bg-red-600 hover:bg-red-700 text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
+          >
+            <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              {restaurant.isOpen !== false ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              )}
+            </svg>
+            {restaurant.isOpen !== false ? 'Close' : 'Open'}
+          </button>
         </div>
       </div>
 
@@ -318,29 +382,68 @@ export default function RestaurantCard({
                 onChange={(e) => onEditChange.phone(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {daysOfWeek.map(day => (
-                  <div key={day} className="flex items-center space-x-2">
-                    <span className="w-20 capitalize text-gray-700 text-sm">{day}</span>
-                    <input
-                      type="time"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
-                      value={hours[day]?.open || ''}
-                      onChange={(e) => handleHoursChange(day, 'open', e.target.value)}
-                    />
-                    <span>-</span>
-                    <input
-                      type="time"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
-                      value={hours[day]?.close || ''}
-                      onChange={(e) => handleHoursChange(day, 'close', e.target.value)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+             <div>
+    <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
+    <div className="mt-2 space-y-2">
+      {hoursEntries.map((entry, index) => (
+        <div key={index} className="flex items-center space-x-2">
+          <select
+            value={entry.day}
+            onChange={(e) => handleHoursEntryChange(index, 'day', e.target.value)}
+            className="block w-32 border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+          >
+            {daysOfWeek.map(day => (
+              <option 
+                key={day} 
+                value={day}
+                disabled={hoursEntries.some(e => e.day === day && e !== entry)}
+              >
+                {day.charAt(0).toUpperCase() + day.slice(1)}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="time"
+            className="block w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+            value={entry.open}
+            onChange={(e) => handleHoursEntryChange(index, 'open', e.target.value)}
+          />
+          <span>-</span>
+          <input
+            type="time"
+            className="block w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
+            value={entry.close}
+            onChange={(e) => handleHoursEntryChange(index, 'close', e.target.value)}
+          />
+
+          <button
+            type="button"
+            onClick={() => handleRemoveHoursEntry(index)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      ))}
+
+      {availableDays.length > 0 && (
+        <button
+          type="button"
+          onClick={handleAddHoursEntry}
+          className="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-[#7b68ee] bg-[#7b68ee]/10 hover:bg-[#7b68ee]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7b68ee]"
+        >
+          <svg className="-ml-0.5 mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Hours
+        </button>
+      )}
+    </div>
+  </div>
+
             <div>
               <label htmlFor="backgroundImage" className="block text-sm font-medium text-gray-700">
                 Background Image
