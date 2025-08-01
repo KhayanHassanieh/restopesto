@@ -436,7 +436,7 @@ export default function OrderModal({
                                 </svg>
                                 Order Items
                             </h3>
-                            {mode === 'edit' && formData.cart.length === 0 && (
+                            {mode === 'edit' && (
                                 <button
                                     type="button"
                                     onClick={() => {
