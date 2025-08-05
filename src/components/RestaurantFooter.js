@@ -20,9 +20,11 @@ export default function RestaurantFooter({ hours, instagramURL, tiktokURL, faceb
           <div className="text-sm text-center space-y-1">
             {daysOfWeek.map(day => {
               const info = hours[day] || {};
-              const label = !info.open || !info.close || info.open === info.close
-                ? 'Closed'
-                : `${formatTime(info.open)} - ${formatTime(info.close)}`;
+              const label = info.is24Hours
+                ? 'Open 24 hours'
+                : !info.open || !info.close || info.open === info.close
+                  ? 'Closed'
+                  : `${formatTime(info.open)} - ${formatTime(info.close)}`;
               return (
                 <p key={day}>{capitalize(day)}: {label}</p>
               );
