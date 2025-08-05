@@ -13,6 +13,7 @@ import CustomersDashboard from '@/components/CustomersDashboard';
 import MenuItemsDashboard from '@/components/MenuItemsDashboard';
 import RecentOrders from '@/components/RecentOrders';
 import AnalyticsGraph from '@/components/AnalyticsGraph';
+import OpeningHoursDashboard from '@/components/OpeningHoursDashboard';
 
 export default function DashboardPage() {
     const [restaurantData, setRestaurantData] = useState(null);
@@ -263,6 +264,12 @@ export default function DashboardPage() {
                         >
                             Menu Items
                         </button>
+                        <button
+                            onClick={() => setActiveTab('hours')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hours' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Opening Hours
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -327,6 +334,14 @@ export default function DashboardPage() {
 
                 {activeTab === 'menu' && (
                     <MenuItemsDashboard menuItems={menuItems} orders={ordersData} />
+                )}
+                {activeTab === 'hours' && (
+                    <OpeningHoursDashboard
+                        restaurant={restaurantData}
+                        onRestaurantUpdate={(updates) =>
+                            setRestaurantData((prev) => ({ ...prev, ...updates }))
+                        }
+                    />
                 )}
             </main>
         </div>
