@@ -14,6 +14,7 @@ import MenuItemsDashboard from '@/components/MenuItemsDashboard';
 import RecentOrders from '@/components/RecentOrders';
 import AnalyticsGraph from '@/components/AnalyticsGraph';
 import OpeningHoursDashboard from '@/components/OpeningHoursDashboard';
+import MenuManagement from '@/components/MenuManagement';
 
 export default function DashboardPage() {
     const [restaurantData, setRestaurantData] = useState(null);
@@ -22,6 +23,7 @@ export default function DashboardPage() {
     const [ordersData, setOrdersData] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
     const [indexError, setIndexError] = useState(false);
+    const [branchId, setBranchId] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -75,10 +77,11 @@ export default function DashboardPage() {
             if (!querySnapshot.empty) {
                 const restaurantDoc = querySnapshot.docs[0];
                 const restaurantId = restaurantDoc.id;
-                const branchId =
+                const branchIdLocal =
                     typeof window !== 'undefined'
                         ? localStorage.getItem('branchId')
                         : null;
+                setBranchId(branchIdLocal);
 
                 setRestaurantData({
                     id: restaurantId,
@@ -88,11 +91,11 @@ export default function DashboardPage() {
 
                 // Try to fetch orders with the composite query
                 try {
-                    const ordersQuery = branchId
+                    const ordersQuery = branchIdLocal
                         ? query(
                               collection(db, 'orders'),
                               where('restaurantId', '==', restaurantId),
-                              where('branchId', '==', branchId),
+                              where('branchId', '==', branchIdLocal),
                               orderBy('createdAt', 'desc')
                           )
                         : query(
@@ -131,11 +134,11 @@ export default function DashboardPage() {
                         setIndexError(true);
                     }
                     // Fallback: fetch without ordering
-                    const fallbackQuery = branchId
+                    const fallbackQuery = branchIdLocal
                         ? query(
                               collection(db, 'orders'),
                               where('restaurantId', '==', restaurantId),
-                              where('branchId', '==', branchId)
+                              where('branchId', '==', branchIdLocal)
                           )
                         : query(
                               collection(db, 'orders'),
@@ -164,20 +167,20 @@ export default function DashboardPage() {
                 }
 
                 // Fetch menu items, preferring branch-level menu when available
-                let menuCollection = branchId
+                let menuCollection = branchIdLocal
                     ? collection(
                           db,
                           'restaurants',
                           restaurantId,
                           'branches',
-                          branchId,
+                          branchIdLocal,
                           'menu'
                       )
                     : collection(db, 'restaurants', restaurantId, 'menu');
 
                 let menuSnapshot = await getDocs(menuCollection);
 
-                if (menuSnapshot.empty && branchId) {
+                if (menuSnapshot.empty && branchIdLocal) {
                     // Fallback to restaurant-wide menu if no branch-specific menu
                     menuCollection = collection(
                         db,
@@ -233,40 +236,46 @@ export default function DashboardPage() {
             {/* Navigation */}
             <nav className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex space-x-8">
+                    <div className="flex space-x-8 overflow-x-auto whitespace-nowrap sm:overflow-visible">
                         <button
                             onClick={() => setActiveTab('overview')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Overview
                         </button>
                         <button
                             onClick={() => setActiveTab('orders')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Orders
                         </button>
                         <button
                             onClick={() => setActiveTab('sales')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sales' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sales' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Sales
                         </button>
                         <button
                             onClick={() => setActiveTab('customers')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'customers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'customers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Customers
                         </button>
                         <button
                             onClick={() => setActiveTab('menu')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'menu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'menu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Menu Items Performance
                         </button>
                         <button
+                            onClick={() => setActiveTab('manageMenu')}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manageMenu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                            Manage Menu
+                        </button>
+                        <button
                             onClick={() => setActiveTab('hours')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hours' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hours' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Opening Hours
                         </button>
@@ -334,6 +343,9 @@ export default function DashboardPage() {
 
                 {activeTab === 'menu' && (
                     <MenuItemsDashboard menuItems={menuItems} orders={ordersData} />
+                )}
+                {activeTab === 'manageMenu' && (
+                    <MenuManagement restaurantId={restaurantData.id} branchId={branchId} />
                 )}
                 {activeTab === 'hours' && (
                     <OpeningHoursDashboard
