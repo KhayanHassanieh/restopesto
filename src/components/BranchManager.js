@@ -5,7 +5,12 @@ import { db, auth, firebaseConfig } from '@/firebase/firebaseConfig';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 
-export default function BranchManager({ restaurantId, visible }) {
+export default function BranchManager({
+  restaurantId,
+  visible,
+  canAddBranch = true,
+  canEditCredentials = true
+}) {
   const [branches, setBranches] = useState([]);
   const [newBranch, setNewBranch] = useState({ name: '', phone: '',location:'' , city: '', areas: '', username:'', password:''  });
 
@@ -38,6 +43,7 @@ export default function BranchManager({ restaurantId, visible }) {
   }, [visible, restaurantId]);
 
   const addBranch = async () => {
+    if (!canAddBranch) return;
     if (!newBranch.name || !newBranch.phone || !newBranch.username || !newBranch.password) return;
 
     const email = newBranch.username.includes('@') ? newBranch.username : `${newBranch.username}@krave.me`;
@@ -93,6 +99,10 @@ export default function BranchManager({ restaurantId, visible }) {
   };
 
   const handleEditBranch = async (branch) => {
+    if (!canEditCredentials) {
+      setEditingBranch({ ...branch });
+      return;
+    }
     let username = '';
     try {
       const snap = await getDocs(
@@ -117,52 +127,60 @@ export default function BranchManager({ restaurantId, visible }) {
       updatedBranch.areas = updatedBranch.areas.split(',').map(a => a.trim());
     }
 
-  const branchRef = doc(db, 'restaurants', restaurantId, 'branches', updatedBranch.id);
-  await updateDoc(branchRef, {
+    const branchRef = doc(db, 'restaurants', restaurantId, 'branches', updatedBranch.id);
+    const branchData = {
       name: updatedBranch.name,
       phone: updatedBranch.phone,
       location: updatedBranch.location,
       city: updatedBranch.city,
-      username: updatedBranch.username,
       areas: updatedBranch.areas
-  });
+    };
 
+    if (canEditCredentials && updatedBranch.username) {
+      branchData.username = updatedBranch.username;
+    }
 
-    const userSnap = await getDocs(
-      query(collection(db, 'branchUsers'), where('branchId', '==', updatedBranch.id))
-    );
+    await updateDoc(branchRef, branchData);
 
-    if (!userSnap.empty) {
-      const userDoc = userSnap.docs[0];
-      const currentEmail = userDoc.data().email;
-      const uid = userDoc.data().uid;
+    if (canEditCredentials) {
+      const userSnap = await getDocs(
+        query(collection(db, 'branchUsers'), where('branchId', '==', updatedBranch.id))
+      );
 
-      const newEmail = updatedBranch.username.includes('@') ? updatedBranch.username : `${updatedBranch.username}@krave.me`;
+      if (!userSnap.empty) {
+        const userDoc = userSnap.docs[0];
+        const currentEmail = userDoc.data().email;
+        const uid = userDoc.data().uid;
 
-      const emailChanged = newEmail && newEmail !== currentEmail;
-      const passwordChanged = updatedBranch.password && updatedBranch.password.length > 0;
+        const newEmail = updatedBranch.username.includes('@')
+          ? updatedBranch.username
+          : `${updatedBranch.username}@krave.me`;
 
-      if (emailChanged) {
-        await updateDoc(doc(db, 'branchUsers', userDoc.id), {
-          email: newEmail,
-          updatedAt: new Date()
-        });
-      }
+        const emailChanged = newEmail && newEmail !== currentEmail;
+        const passwordChanged = updatedBranch.password && updatedBranch.password.length > 0;
 
-      if (emailChanged || passwordChanged) {
-        const userToken = await auth.currentUser.getIdToken();
-        await fetch('https://updaterestaurantuser-zsgpdxuheq-uc.a.run.app', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${userToken}`
-          },
-          body: JSON.stringify({
-            uid,
-            ...(emailChanged && { newEmail }),
-            ...(passwordChanged && { newPassword: updatedBranch.password })
-          })
-        });
+        if (emailChanged) {
+          await updateDoc(doc(db, 'branchUsers', userDoc.id), {
+            email: newEmail,
+            updatedAt: new Date()
+          });
+        }
+
+        if (emailChanged || passwordChanged) {
+          const userToken = await auth.currentUser.getIdToken();
+          await fetch('https://updaterestaurantuser-zsgpdxuheq-uc.a.run.app', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${userToken}`
+            },
+            body: JSON.stringify({
+              uid,
+              ...(emailChanged && { newEmail }),
+              ...(passwordChanged && { newPassword: updatedBranch.password })
+            })
+          });
+        }
       }
     }
 
@@ -186,8 +204,8 @@ export default function BranchManager({ restaurantId, visible }) {
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 w-full">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900">Branches</h3>
-        {!isAdding && (
-          <button 
+        {canAddBranch && !isAdding && (
+          <button
             onClick={() => setIsAdding(true)}
             className="px-4 py-2 bg-[#7b68ee] hover:bg-[#6a58d6] text-white rounded-md text-sm font-medium transition-colors"
           >
@@ -261,24 +279,28 @@ export default function BranchManager({ restaurantId, visible }) {
                       onChange={(e) => setEditingBranch({ ...editingBranch, phone: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-                      value={editingBranch.username}
-                      onChange={(e) => setEditingBranch({ ...editingBranch, username: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input
-                      type="password"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-                      value={editingBranch.password}
-                      onChange={(e) => setEditingBranch({ ...editingBranch, password: e.target.value })}
-                    />
-                  </div>
+                  {canEditCredentials && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                          value={editingBranch.username}
+                          onChange={(e) => setEditingBranch({ ...editingBranch, username: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input
+                          type="password"
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                          value={editingBranch.password}
+                          onChange={(e) => setEditingBranch({ ...editingBranch, password: e.target.value })}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input
@@ -327,7 +349,7 @@ export default function BranchManager({ restaurantId, visible }) {
         ))}
       </div>
 
-      {isAdding && (
+      {canAddBranch && isAdding && (
         <div className="mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
           <h4 className="font-medium text-gray-900 mb-3">Add New Branch</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -351,26 +373,30 @@ export default function BranchManager({ restaurantId, visible }) {
               onChange={(e) => setNewBranch({ ...newBranch, phone: e.target.value })}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username*</label>
-            <input
-              type="text"
-              placeholder="branchuser"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-              value={newBranch.username}
-              onChange={(e) => setNewBranch({ ...newBranch, username: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password*</label>
-            <input
-              type="password"
-              placeholder="••••••"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
-              value={newBranch.password}
-              onChange={(e) => setNewBranch({ ...newBranch, password: e.target.value })}
-            />
-          </div>
+          {canEditCredentials && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username*</label>
+                <input
+                  type="text"
+                  placeholder="branchuser"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                  value={newBranch.username}
+                  onChange={(e) => setNewBranch({ ...newBranch, username: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password*</label>
+                <input
+                  type="password"
+                  placeholder="••••••"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-gray-800 text-gray-800"
+                  value={newBranch.password}
+                  onChange={(e) => setNewBranch({ ...newBranch, password: e.target.value })}
+                />
+              </div>
+            </>
+          )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
               <input
@@ -422,18 +448,20 @@ export default function BranchManager({ restaurantId, visible }) {
 
       {branches.length === 0 && !isAdding && (
         <div className="text-center py-8">
-          
           <h3 className="mt-2 text-sm font-medium text-gray-900">No branches</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by adding your first branch.</p>
-          <div className="mt-6">
-            <button
-              onClick={() => setIsAdding(true)}
-              className="inline-flex items-center px-4 py-2 bg-[#7b68ee] hover:bg-[#6a58d6] text-white rounded-md text-sm font-medium transition-colors"
-            >
-             
-              Add Branch
-            </button>
-          </div>
+          {canAddBranch && (
+            <>
+              <p className="mt-1 text-sm text-gray-500">Get started by adding your first branch.</p>
+              <div className="mt-6">
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="inline-flex items-center px-4 py-2 bg-[#7b68ee] hover:bg-[#6a58d6] text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  Add Branch
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
