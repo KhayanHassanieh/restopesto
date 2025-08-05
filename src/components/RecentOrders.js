@@ -78,7 +78,7 @@ export default function RecentOrders({ orders = [], showAll = false, onOrderUpda
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <select
-                  className="border border-gray-300 rounded-md text-sm p-1"
+                  className="border border-gray-300 rounded-md text-sm p-1 text-gray-500"
                   value={order.status || 'Ordered'}
                   onChange={(e) => handleStatusChange(order.id, e.target.value)}
                 >
