@@ -334,7 +334,9 @@ export default function MenuManagement({ restaurantId, branchId }) {
             renderItem={(item, handleProps) => (
               <div className="p-4 flex flex-col md:flex-row gap-4">
                 <div
-                  className="flex items-center cursor-grab text-gray-500 sm:self-start"
+
+                  className="flex items-center cursor-grab text-gray-500 sm:self-start touch-none"
+
                   {...handleProps}
                 >
                   <GripVertical size={20} />

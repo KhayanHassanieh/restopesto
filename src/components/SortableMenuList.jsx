@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 function SortableItem({ id, render }) {
@@ -21,7 +21,11 @@ function SortableItem({ id, render }) {
 
 export default function SortableMenuList({ items, renderItem, onReorder }) {
   const [ordered, setOrdered] = useState(items);
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 }
+    })
+  );
 
   useEffect(() => {
     setOrdered(items);

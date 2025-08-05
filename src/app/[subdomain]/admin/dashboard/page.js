@@ -233,55 +233,61 @@ export default function DashboardPage() {
                 </div>
             </header>
 
+
             {/* Navigation */}
             <nav className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex space-x-8">
+                    <div className="flex space-x-8 overflow-x-auto whitespace-nowrap sm:overflow-visible">
                         <button
                             onClick={() => setActiveTab('overview')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Overview
                         </button>
                         <button
                             onClick={() => setActiveTab('orders')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Orders
                         </button>
                         <button
                             onClick={() => setActiveTab('sales')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sales' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sales' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Sales
                         </button>
                         <button
                             onClick={() => setActiveTab('customers')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'customers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'customers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Customers
                         </button>
                         <button
                             onClick={() => setActiveTab('menu')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'menu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'menu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+
                         >
                             Menu Items Performance
                         </button>
                         <button
                             onClick={() => setActiveTab('manageMenu')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manageMenu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manageMenu' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+
                         >
                             Manage Menu
                         </button>
                         <button
                             onClick={() => setActiveTab('hours')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hours' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+
+                            className={`flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'hours' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                         >
                             Opening Hours
                         </button>
                     </div>
                 </div>
             </nav>
+
 
             {/* Index creation alert */}
             {indexError && (
