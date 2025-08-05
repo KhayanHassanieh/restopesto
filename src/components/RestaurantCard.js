@@ -37,11 +37,15 @@ export default function RestaurantCard({
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
   const defaultHours = useMemo(() => {
-  return daysOfWeek.reduce((acc, d) => ({
-    ...acc,
-    [d]: { open: '', close: '' }
-  }), {});
-}, []);
+    return daysOfWeek.reduce(
+      (acc, d) => ({
+        ...acc,
+        [d]: { open: '', close: '', is24Hours: false }
+      }),
+      {}
+    );
+  }, []);
+
   const [hours, setHours] = useState(restaurant.hours || defaultHours);
  const showEdit = editMode === restaurant.id;
   const showBranches = openBranchId === restaurant.id;
@@ -54,7 +58,7 @@ export default function RestaurantCard({
       return restaurant.hours || defaultHours;
     });
   }
-}, [showEdit]);
+}, [showEdit, restaurant.hours, defaultHours]);
 
   const handleHoursChange = (day, field, value) => {
     setHours(prev => ({
@@ -73,10 +77,10 @@ export default function RestaurantCard({
   };
   const handleUpdate = (e) => {
     e.preventDefault();
-      const hours = hoursEntries.reduce((acc, { day, open, close }) => {
-      acc[day] = { open, close };
-      return acc;
-    }, {});
+      const hours = hoursEntries.reduce((acc, { day, open, close, is24Hours }) => {
+        acc[day] = { open, close, is24Hours };
+        return acc;
+      }, {});
     
     onUpdate({
       ...(editName && { name: editName }),
@@ -142,7 +146,8 @@ export default function RestaurantCard({
     Object.entries(restaurant.hours || defaultHours).map(([day, times]) => ({
       day,
       open: times.open,
-      close: times.close
+      close: times.close,
+      is24Hours: times.is24Hours || false
     }))
   );
  const availableDays = daysOfWeek.filter(
@@ -153,7 +158,7 @@ export default function RestaurantCard({
     if (availableDays.length > 0) {
       setHoursEntries(prev => [
         ...prev,
-        { day: availableDays[0], open: '', close: '' }
+        { day: availableDays[0], open: '', close: '', is24Hours: false }
       ]);
     }
   };
@@ -386,7 +391,7 @@ export default function RestaurantCard({
     <label className="block text-sm font-medium text-gray-700">Opening Hours</label>
     <div className="mt-2 space-y-2">
       {hoursEntries.map((entry, index) => (
-        <div key={index} className="flex items-center space-x-2">
+        <div key={index} className="flex items-center space-x-2 flex-wrap">
           <select
             value={entry.day}
             onChange={(e) => handleHoursEntryChange(index, 'day', e.target.value)}
@@ -408,6 +413,7 @@ export default function RestaurantCard({
             className="block w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
             value={entry.open}
             onChange={(e) => handleHoursEntryChange(index, 'open', e.target.value)}
+            disabled={entry.is24Hours}
           />
           <span>-</span>
           <input
@@ -415,7 +421,18 @@ export default function RestaurantCard({
             className="block w-24 border border-gray-300 rounded-md shadow-sm py-1 px-2 focus:outline-none focus:ring-[#7b68ee] focus:border-[#7b68ee] sm:text-sm text-gray-800"
             value={entry.close}
             onChange={(e) => handleHoursEntryChange(index, 'close', e.target.value)}
+            disabled={entry.is24Hours}
           />
+
+          <label className="flex items-center space-x-1">
+            <input
+              type="checkbox"
+              checked={entry.is24Hours}
+              onChange={(e) => handleHoursEntryChange(index, 'is24Hours', e.target.checked)}
+              className="h-4 w-4 text-[#7b68ee] border-gray-300 rounded"
+            />
+            <span className="text-xs text-gray-700">24h</span>
+          </label>
 
           <button
             type="button"

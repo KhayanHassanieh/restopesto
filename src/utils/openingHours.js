@@ -2,23 +2,42 @@ export const daysOfWeek = ['monday','tuesday','wednesday','thursday','friday','s
 
 export function isRestaurantOpen(hours) {
   if (!hours || typeof hours !== 'object') return true;
+
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date();
   const localNow = new Date(now.toLocaleString('en-US', { timeZone }));
-  const day = localNow.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const day = localNow
+    .toLocaleDateString('en-US', { weekday: 'long' })
+    .toLowerCase();
+
   const dayHours = hours[day];
-  if (!dayHours || !dayHours.open || !dayHours.close) return true;
+
+  // If no hours defined for the day, assume open
+  if (!dayHours) return true;
+
+  // Explicit 24-hour flag
+  if (dayHours.is24Hours) return true;
+
+  // If either open or close time missing, assume open
+  if (!dayHours.open || !dayHours.close) return true;
+
+  // Same open and close means explicitly closed
   if (dayHours.open === dayHours.close) return false;
+
   const [openH, openM] = dayHours.open.split(':').map(Number);
   const [closeH, closeM] = dayHours.close.split(':').map(Number);
+
   const openDate = new Date(localNow);
   openDate.setHours(openH, openM, 0, 0);
   const closeDate = new Date(localNow);
   closeDate.setHours(closeH, closeM, 0, 0);
+
+  // Handle overnight hours
   if (closeDate <= openDate) {
     if (localNow >= openDate) return true;
     closeDate.setDate(closeDate.getDate() + 1);
   }
+
   return localNow >= openDate && localNow <= closeDate;
 }
 
