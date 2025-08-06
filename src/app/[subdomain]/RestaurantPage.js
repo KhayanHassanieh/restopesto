@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
 
@@ -7,6 +7,7 @@ import MenuItem from '@/components/MenuItem';
 import CheckoutForm from '@/components/CheckoutForm';
 import LocationPicker from '@/components/LocationPicker';
 import RestaurantFooter from '@/components/RestaurantFooter';
+import Stepper, { Step } from '@/components/Stepper';
 import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity, removeItemFromCart } from '@/utils/cartService';
 import { createOrder, clearCart } from '@/utils/orderService';
 import { isRestaurantOpen } from '@/utils/openingHours';
@@ -32,7 +33,9 @@ export default function RestaurantPage({ subdomain }) {
   const searchParams = useSearchParams();
   const incomingCartId = searchParams.get('cartId');
   const [cartStatus, setCartStatus] = useState('active');
-  const [checkoutStep, setCheckoutStep] = useState(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const stepperRef = useRef(() => {});
   const [orderData, setOrderData] = useState(null);
   const [location, setLocation] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -915,17 +918,17 @@ export default function RestaurantPage({ subdomain }) {
               </div>
 
               {/* ✅ Disable checkout if ordered */}
-              <button
-                onClick={() => setCheckoutStep('address')}
-                disabled={cartStatus === 'completed'}
-                className={`w-full text-white py-3 px-4 rounded-lg font-medium transition-colors ${cartStatus === 'completed' ? 'bg-gray-400 cursor-not-allowed' : ''
-                  }`}
-                style={{
-                  background: cartStatus === 'completed' ? undefined : 'var(--theme-primary)',
-                }}
-              >
-                Proceed to Checkout
-              </button>
+                <button
+                  onClick={() => setIsCheckoutOpen(true)}
+                  disabled={cartStatus === 'completed'}
+                  className={`w-full text-white py-3 px-4 rounded-lg font-medium transition-colors ${cartStatus === 'completed' ? 'bg-gray-400 cursor-not-allowed' : ''
+                    }`}
+                  style={{
+                    background: cartStatus === 'completed' ? undefined : 'var(--theme-primary)',
+                  }}
+                >
+                  Proceed to Checkout
+                </button>
             </div>
           )}
         </div>
@@ -952,171 +955,177 @@ export default function RestaurantPage({ subdomain }) {
           </span>
         </button>
       )}
-      {checkoutStep === 'address' && (
-
-        <div className="fixed inset-0 z-50 bg-black/50 bg-opacity-50 flex items-center justify-center p-4">
-          <CheckoutForm
-            restaurantId={restaurant.id}
-            onBack={() => setCheckoutStep(null)}
-            onComplete={(addressData) => {
-              setOrderData({
-
-                ...addressData,
-                items,
-                finalTotal: cartTotal,
-                restaurantId: restaurant.id,
-                cartId
-              });
-              setCheckoutStep('location');
-            }}
-          />
-        </div>
-      )}
-
-      {checkoutStep === 'location' && (
+      {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <LocationPicker
-            initialLocation={location}
-            onBack={() => setCheckoutStep('address')}
-            onConfirm={({ lat, lng, mapUrl }) => {
-              setLocation({ lat, lng });
-              setOrderData(prev => ({
-                ...prev,
-                lat,
-                lng,
-                mapUrl
-              }));
-              setCheckoutStep('payment');
+          <Stepper
+            initialStep={1}
+            onStepChange={(step) => setCurrentStep(step)}
+            footerClassName="hidden"
+            renderStepIndicator={({ step, currentStep: cs, onStepClick }) => {
+              stepperRef.current = onStepClick;
+              const status = cs === step ? 'active' : cs > step ? 'complete' : 'inactive';
+              const base = 'flex h-8 w-8 items-center justify-center rounded-full text-sm';
+              const styles =
+                status === 'active'
+                  ? 'bg-[var(--theme-primary)] text-white'
+                  : status === 'complete'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-500';
+              return (
+                <div className={`${base} ${styles}`} onClick={() => onStepClick(step)}>
+                  {status === 'complete' ? '✓' : step}
+                </div>
+              );
             }}
-          />
-        </div>
-      )}
+          >
+            <Step>
+              <CheckoutForm
+                restaurantId={restaurant.id}
+                onBack={() => setIsCheckoutOpen(false)}
+                onComplete={(addressData) => {
+                  setOrderData({
+                    ...addressData,
+                    items,
+                    finalTotal: cartTotal,
+                    restaurantId: restaurant.id,
+                    cartId,
+                  });
+                  stepperRef.current(currentStep + 1);
+                }}
+              />
+            </Step>
+            <Step>
+              <LocationPicker
+                initialLocation={location}
+                onBack={() => stepperRef.current(currentStep - 1)}
+                onConfirm={({ lat, lng, mapUrl }) => {
+                  setLocation({ lat, lng });
+                  setOrderData((prev) => ({
+                    ...prev,
+                    lat,
+                    lng,
+                    mapUrl,
+                  }));
+                  stepperRef.current(currentStep + 1);
+                }}
+              />
+            </Step>
+            <Step>
+              <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
 
-      {checkoutStep === 'payment' && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
+                <div className="space-y-4 mb-6">
+                  <div className="p-4 border border-gray-300 rounded-md">
+                    <h3 className="font-medium text-gray-800 mb-2">Cash on Delivery</h3>
+                    <p className="text-sm text-gray-600">Pay when you receive your order</p>
+                  </div>
+                </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="p-4 border border-gray-300 rounded-md">
-                <h3 className="font-medium text-gray-800 mb-2">Cash on Delivery</h3>
-                <p className="text-sm text-gray-600">Pay when you receive your order</p>
-              </div>
-            </div>
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between mb-4 font-bold">
+                    <span className="text-gray-800">Total:</span>
+                    <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Order Note
+                    </label>
+                    <textarea
+                      value={orderNote}
+                      onChange={(e) => setOrderNote(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800 placeholder:text-gray-500"
+                      placeholder="Any notes for the restaurant?"
+                    />
+                  </div>
+                </div>
 
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mb-4 font-bold">
-                <span className="text-gray-800">Total:</span>
-                <span className="text-gray-800">${cartTotal.toFixed(2)}</span>
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Order Note
-                </label>
-                <textarea
-                  value={orderNote}
-                  onChange={(e) => setOrderNote(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--theme-primary)] text-gray-800 placeholder:text-gray-500"
-                  placeholder="Any notes for the restaurant?"
-                />
-              </div>
-            </div>
+                <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => stepperRef.current(currentStep - 1)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const finalOrderData = { ...orderData, orderNote };
+                        const orderRef = await createOrder(finalOrderData);
+                        let trackUrl = '';
+                        if (typeof window !== 'undefined') {
+                          if (window.location.hostname.includes('localhost')) {
+                            trackUrl = `${window.location.origin}/${subdomain}/track/${orderRef.id}`;
+                          } else {
+                            trackUrl = `${window.location.origin}/track/${orderRef.id}`;
+                          }
+                        }
 
-            <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => setCheckoutStep('location')}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const finalOrderData = { ...orderData, orderNote };
-                    const orderRef = await createOrder(finalOrderData);
-                    let trackUrl = '';
-                    if (typeof window !== 'undefined') {
-                      if (window.location.hostname.includes('localhost')) {
-                        trackUrl = `${window.location.origin}/${subdomain}/track/${orderRef.id}`;
-                      } else {
-                        trackUrl = `${window.location.origin}/track/${orderRef.id}`;
+                        // Clear cart locally + remotely
+                        setCart([]);
+                        await clearCart(cartId);
+                        await updateDoc(doc(db, 'carts', cartId), { status: 'completed' });
+                        // Fetch phone number of selected branch
+                        const branchDoc = await getDoc(doc(db, 'restaurants', finalOrderData.restaurantId, 'branches', finalOrderData.branchId));
+                        const phone = branchDoc?.data()?.phone;
+
+                        if (!phone) {
+                          alert('Could not find branch phone number.');
+                          return;
+                        }
+
+                        // Format WhatsApp message
+                        const messageLines = [
+                          `*New Order*`,
+                          `Name: ${finalOrderData.fullName}`,
+                          `Phone: +961${finalOrderData.mobileNumber}`,
+                          `Region: ${finalOrderData.region}, Area: ${finalOrderData.area}`,
+                          `Address: ${finalOrderData.addressDetails}`,
+                          `Location: ${finalOrderData.mapUrl}`,
+                          `Track Order: ${trackUrl}`,
+                          finalOrderData.orderNote ? `Order Note: ${finalOrderData.orderNote}` : '',
+                          '',
+                          ...finalOrderData.items.map((item, i) => {
+                            const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
+                            const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
+                            const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
+                            const note = item.instructions ? `   *Note:* ${item.instructions}` : '';
+                            return [line, addons, removables, note].filter(Boolean).join('\n');
+                          }),
+                          '',
+                          `Total: $${finalOrderData.finalTotal.toFixed(2)}`
+                        ];
+
+                        const encodedMessage = encodeURIComponent(messageLines.filter(Boolean).join('\n'));
+
+                        // ✅ Show thank-you screen in case redirect doesn't work
+                        setOrderPlaced(true);
+                        setIsCheckoutOpen(false);
+                        setCartVisible(false);
+
+                        // 🔁 Redirect to WhatsApp
+                        window.location.href = `https://wa.me/${phone}?text=${encodedMessage}`;
+                      } catch (error) {
+                        console.error('Error placing order:', error);
+                        alert('Failed to place order. Please try again.');
                       }
-                    }
+                    }}
 
-                    // Clear cart locally + remotely
-                    setCart([]);
-                    await clearCart(cartId);
-                    await updateDoc(doc(db, 'carts', cartId), { status: 'completed' });
-                    // Fetch phone number of selected branch
-                    const branchDoc = await getDoc(doc(db, 'restaurants', finalOrderData.restaurantId, 'branches', finalOrderData.branchId));
-                    const phone = branchDoc?.data()?.phone;
+                    className="px-4 py-2 text-white rounded-md hover:brightness-110 transition-colors" style={{
+                      background: 'var(--theme-primary)',
 
-                    if (!phone) {
-                      alert('Could not find branch phone number.');
-                      return;
-                    }
-
-                    // Format WhatsApp message
-                    const messageLines = [
-                      `*New Order*`,
-                      `Name: ${finalOrderData.fullName}`,
-                      `Phone: +961${finalOrderData.mobileNumber}`,
-                      `Region: ${finalOrderData.region}, Area: ${finalOrderData.area}`,
-                      `Address: ${finalOrderData.addressDetails}`,
-                      `Location: ${finalOrderData.mapUrl}`,
-                      `Track Order: ${trackUrl}`,
-                      finalOrderData.orderNote ? `Order Note: ${finalOrderData.orderNote}` : '',
-                      '',
-                      ...finalOrderData.items.map((item, i) => {
-                        const line = `${i + 1}. ${item.name} x${item.quantity} - $${item.finalTotal.toFixed(2)}`;
-                        const addons = item.selectedAddons?.map(a => `   + ${a.name}`).join('\n') || '';
-                        const removables = item.selectedRemovables?.map(r => `   - ${r}`).join('\n') || '';
-                        const note = item.instructions ? `   *Note:* ${item.instructions}` : '';
-                        return [line, addons, removables, note].filter(Boolean).join('\n');
-                      }),
-                      '',
-                      `Total: $${finalOrderData.finalTotal.toFixed(2)}`
-                    ];
-
-                    const encodedMessage = encodeURIComponent(messageLines.filter(Boolean).join('\n'));
-                    {
-                      orderPlaced && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
-                          <div className="text-center">
-                            <h2 className="text-2xl font-bold mb-2 text-green-700">✅ Order Sent!</h2>
-                            <p className="text-gray-700">You’ll be redirected to WhatsApp shortly.</p>
-                          </div>
-                        </div>
-                      )
-                    }
-
-                    // ✅ Show thank-you screen in case redirect doesn't work
-                    setOrderPlaced(true);
-                    setCheckoutStep(null);
-                    setCartVisible(false);
-
-                    // 🔁 Redirect to WhatsApp
-                    window.location.href = `https://wa.me/${phone}?text=${encodedMessage}`;
-                  } catch (error) {
-                    console.error('Error placing order:', error);
-                    alert('Failed to place order. Please try again.');
-                  }
-                }}
-
-                className="px-4 py-2 text-white rounded-md hover:brightness-110 transition-colors" style={{
-                  background: 'var(--theme-primary)',
-
-                }}
-              >
-                Place Order
-              </button>
-            </div>
-          </div>
+                    }}
+                  >
+                    Place Order
+                  </button>
+                </div>
+              </div>
+            </Step>
+          </Stepper>
         </div>
       )}
     </div>
