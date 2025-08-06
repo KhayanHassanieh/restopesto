@@ -13,7 +13,7 @@ export default function StepModal({ currentStep, children, containerClassName = 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className={`bg-white rounded-lg shadow-sm w-full max-w-md ${containerClassName}`}>
-        <div className="p-6 pb-0">
+        <div className="p-6 pb-5">
           <StepIndicator currentStep={currentStep} />
         </div>
         <div className={`px-6 pb-6 ${bodyClassName}`}>
