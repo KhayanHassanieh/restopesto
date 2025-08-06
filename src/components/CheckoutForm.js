@@ -10,7 +10,6 @@ export default function CheckoutForm({
   defaultRegion = 'Mount Lebanon'
 }) {
   const [branches, setBranches] = useState([]);
-  const [loadingBranches, setLoadingBranches] = useState(true);
   const [formData, setFormData] = useState({
     fullName: '',
     mobileNumber: '',
@@ -37,8 +36,6 @@ export default function CheckoutForm({
         setBranches(branchesData);
       } catch (error) {
         console.error('Error fetching branches:', error);
-      } finally {
-        setLoadingBranches(false);
       }
     };
 
@@ -94,10 +91,9 @@ export default function CheckoutForm({
 
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Address Details</h2>
-      
-      <form onSubmit={handleSubmit}>
+
         <div className="space-y-4">
           {/* Full Name */}
           <div>
@@ -221,7 +217,6 @@ export default function CheckoutForm({
             Next
           </button>
         </div>
-      </form>
-    </div>
+    </form>
   );
 }

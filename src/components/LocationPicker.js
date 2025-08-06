@@ -34,14 +34,6 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
     }
   }, []);
 
-  // Lock background scroll when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
-
   // Get current position once loaded and permission allows
   useEffect(() => {
     if (!isLoaded) return;
@@ -84,16 +76,14 @@ export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
 
   if (!isLoaded || !center) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm">
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
+      <div className="flex items-center justify-center flex-1">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm w-full h-[80vh] max-h-[600px] flex flex-col">
+    <div className="flex flex-col h-full">
       {/* Permission Denied Alert */}
       {showPermissionAlert && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4">
