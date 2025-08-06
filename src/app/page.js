@@ -5,6 +5,7 @@ import { FaQrcode, FaChartLine, FaMobileAlt, FaPalette, FaCrown, FaCheck } from 
 import { IoRestaurant } from 'react-icons/io5';
 import { MdSupportAgent } from 'react-icons/md';
 import PhoneMockupSlider from '../components/PhoneMockupSlider';
+import AnimatedContent from '../components/AnimatedContent'
 import { useState } from 'react';
 export default function Home() {
   const [isYearly, setIsYearly] = useState(true);
@@ -14,64 +15,64 @@ export default function Home() {
 
       <main className="bg-[#f3f3f3] text-[#333] scroll-smooth">
 
-       <section
-  id="home"
-  className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden"
->
-  {/* Background color tint */}
-  <div className="absolute inset-0 bg-[#ffffffc7] z-1" />
+        <section
+          id="home"
+          className="relative min-h-screen flex flex-col items-center justify-center text-center px-4 overflow-hidden"
+        >
+          {/* Background color tint */}
+          <div className="absolute inset-0 bg-[#ffffffc7] z-1" />
 
-  {/* 👇 Phone mockup scroll as background */}
-  <div className="absolute inset-0 z-0 pointer-events-none flex items-center">
-    <div className="w-full overflow-hidden">
-      <PhoneMockupSlider />
-    </div>
-  </div>
+          {/* 👇 Phone mockup scroll as background */}
+          <div className="absolute inset-0 z-0 pointer-events-none flex items-center">
+            <div className="w-full overflow-hidden">
+              <PhoneMockupSlider />
+            </div>
+          </div>
 
-  {/* Main Hero Content */}
-  <div className="max-w-4xl mx-auto relative z-10">
- <img 
-  src='/logo/Krave Logo.png' 
-  alt="Krave Menus Logo"
-  className="mx-auto mb-6 w-full max-w-[650px]" 
-/>
-    {/*<h1 className="text-5xl md:text-6xl font-bold mb-6">
+          {/* Main Hero Content */}
+          <div className="max-w-4xl mx-auto relative z-10">
+            <img
+              src='/logo/Krave Logo.png'
+              alt="Krave Menus Logo"
+              className="mx-auto mb-6 w-full max-w-[650px]"
+            />
+            {/*<h1 className="text-5xl md:text-6xl font-bold mb-6">
       <span className="text-[#ffd200]">Transform</span> Your Restaurant&apos;s Ordering
     </h1>*/}
-    <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-      Smart QR menus with real-time analytics and seamless customer experience
-    </p>
-    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-      <a
-        href="#pricing"
-        className="bg-[#ffd200] hover:bg-[#e6bd00] text-[#333333] px-8 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
-      >
-        Get Started Today
-      </a>
-      <a
-        href="#features"
-        className="bg-[#f3f3f3] border-2 border-[#333333] hover:bg-gray-100 text-[#333333] px-8 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
-      >
-        Explore Features
-      </a>
-    </div>
-  </div>
-</section>
+            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              Smart QR menus with real-time analytics and seamless customer experience
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="#pricing"
+                className="bg-[#ffd200] hover:bg-[#e6bd00] text-[#333333] px-8 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Get Started Today
+              </a>
+              <a
+                href="#features"
+                className="bg-[#f3f3f3] border-2 border-[#333333] hover:bg-gray-100 text-[#333333] px-8 py-4 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Explore Features
+              </a>
+            </div>
+          </div>
+        </section>
 
 
         {/* Logo Cloud */}
-        <section className="py-12 bg-[#f3f3f3]">
+        {/* <section className="py-12 bg-[#f3f3f3]">
           <div className="max-w-7xl mx-auto px-6">
             <p className="text-center text-gray-500 mb-8">Trusted by restaurants nationwide</p>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-center">
-              {[1,2,3,4,5,6].map((i) => (
+              {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="flex items-center justify-center">
                   <IoRestaurant className="text-gray-400 text-4xl" />
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Features */}
         <section id="features" className="py-20 px-6">
@@ -82,52 +83,112 @@ export default function Home() {
                 Everything you need to modernize your restaurant&apos;s ordering experience
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Feature 1 */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
-                <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <FaQrcode className="text-[#ffd200] text-2xl" />
+              <AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.2}
+                delay={0.2}
+              >
+                <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
+                  <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+                    <FaQrcode className="text-[#ffd200] text-2xl" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">QR Code Menus</h3>
+                  <p className="text-gray-600">
+                    Beautiful, customizable digital menus accessible via QR code - no app downloads required for customers.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">QR Code Menus</h3>
-                <p className="text-gray-600">
-                  Beautiful, customizable digital menus accessible via QR code - no app downloads required for customers.
-                </p>
-              </div>
-              
-              {/* Feature 2 */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
-                <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <FaChartLine className="text-[#ffd200] text-2xl" />
+              </AnimatedContent>
+              <AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.2}
+                delay={0.4}
+              >
+                {/* Feature 2 */}
+                <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
+                  <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+                    <FaChartLine className="text-[#ffd200] text-2xl" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Real-time Analytics</h3>
+                  <p className="text-gray-600">
+                    Track orders, popular items, peak times, and customer behavior with our comprehensive dashboard.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Real-time Analytics</h3>
-                <p className="text-gray-600">
-                  Track orders, popular items, peak times, and customer behavior with our comprehensive dashboard.
-                </p>
-              </div>
-              
+              </AnimatedContent>
               {/* Feature 3 */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
-                <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <FaMobileAlt className="text-[#ffd200] text-2xl" />
+              <AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.2}
+                delay={0.5}
+              >
+                <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
+                  <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+                    <FaMobileAlt className="text-[#ffd200] text-2xl" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Mobile-First Design</h3>
+                  <p className="text-gray-600">
+                    Perfectly optimized menus that look great on any device, with intuitive ordering flows.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Mobile-First Design</h3>
-                <p className="text-gray-600">
-                  Perfectly optimized menus that look great on any device, with intuitive ordering flows.
-                </p>
-              </div>
-              
-              {/* Feature 4 */}
-              <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
-                <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
-                  <FaPalette className="text-[#ffd200] text-2xl" />
+              </AnimatedContent>
+              <AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.1}
+                delay={0.55}
+              >
+                {/* Feature 4 */}
+                <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
+                  <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+                    <FaPalette className="text-[#ffd200] text-2xl" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Custom Branding</h3>
+                  <p className="text-gray-600">
+                    Match your restaurant&apos;s aesthetic with custom colors, fonts, and layout options.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Custom Branding</h3>
-                <p className="text-gray-600">
-                  Match your restaurant&apos;s aesthetic with custom colors, fonts, and layout options.
-                </p>
-              </div>
-              
+              </AnimatedContent>
+              <AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.1}
+                delay={0.6}
+              >
               {/* Feature 5 */}
               <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
                 <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
@@ -138,7 +199,19 @@ export default function Home() {
                   Change menu items, prices, or availability in seconds - changes appear immediately to customers.
                 </p>
               </div>
-              
+</AnimatedContent>
+<AnimatedContent
+                distance={50}
+                direction="vertical"
+                reverse={false}
+                duration={0.5}
+                ease="power3.out"
+                initialOpacity={0.0}
+                animateOpacity
+                scale={1.05}
+                threshold={0.1}
+                delay={0.62}
+              >
               {/* Feature 6 */}
               <div className="bg-[#ffffff] rounded-xl p-8 shadow-lg hover:shadow-xl transition-all border border-gray-100">
                 <div className="bg-[#ffd200]/10 w-16 h-16 rounded-lg flex items-center justify-center mb-6">
@@ -149,6 +222,7 @@ export default function Home() {
                   Our team is here to help you set up and optimize your digital menu experience.
                 </p>
               </div>
+              </AnimatedContent>
             </div>
           </div>
         </section>
@@ -162,29 +236,29 @@ export default function Home() {
                 Simple setup, powerful results
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <img src='/UI/1st_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <img src='/UI/1st_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl' />
                 <h3 className="text-xl font-bold mb-3">Customer Selects Items</h3>
                 <p className="text-gray-600">
                   A seamless, mobile-friendly menu for easy item selection.
                 </p>
               </div>
-              
+
               <div className="text-center">
-                <img src='/UI/2nd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
+                <img src='/UI/2nd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl' />
                 <h3 className="text-xl font-bold mb-3">Shareable Cart with Friends</h3>
                 <p className="text-gray-600">
-                 Group ordering made easy — more items, more value.
-                 </p>
+                  Group ordering made easy — more items, more value.
+                </p>
               </div>
-              
+
               <div className="text-center">
-                <img src='/UI/3rd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl'/>
-               <h3 className="text-xl font-bold mb-3">Ordering Directly via WhatsApp</h3>
+                <img src='/UI/3rd_number_image.png' className='w-40 flex items-center justify-center mx-auto  text-2xl' />
+                <h3 className="text-xl font-bold mb-3">Ordering Directly via WhatsApp</h3>
                 <p className="text-gray-600">
-                No apps, no delays — orders sent instantly to your team.
+                  No apps, no delays — orders sent instantly to your team.
                 </p>
               </div>
             </div>
@@ -310,7 +384,7 @@ export default function Home() {
         </section>
 
         {/* Testimonials */}
-        <section id="testimonials" className="py-20 bg-[#ffd200]/5">
+        {/* <section id="testimonials" className="py-20 bg-[#ffd200]/5">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-4">What Our Customers Say</h2>
@@ -318,9 +392,9 @@ export default function Home() {
                 Don&apos;t just take our word for it
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[1,2,3].map((i) => (
+              {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-[#ffffff] rounded-xl p-8 shadow-lg">
                   <div className="flex items-center mb-4">
                     {[...Array(5)].map((_, star) => (
@@ -341,45 +415,45 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* CTA */}
-       {/* CTA Section with Waves */}
-<section className="relative overflow-hidden bg-[#ffd200] text-center text-black py-20">
-  {/* 🌊 Top Wave (Image) */}
-  <div className="absolute top-0 left-0 w-full -translate-y-[99%]">
-    <img 
-      src="/theme/KraveTheme.png" // Replace with your image path
-      alt="Wave Decoration"
-      className="w-full h-[600px] object-cover" // Adjust height as needed
-    />
-  </div>
+        {/* CTA Section with Waves */}
+        <section className="relative overflow-hidden bg-[#ffd200] text-center text-black py-20">
+          {/* 🌊 Top Wave (Image) */}
+          <div className="absolute top-0 left-0 w-full -translate-y-[99%]">
+            <img
+              src="/theme/KraveTheme.png" // Replace with your image path
+              alt="Wave Decoration"
+              className="w-full h-[600px] object-cover" // Adjust height as needed
+            />
+          </div>
 
-  {/* 📝 CTA Content */}
-  <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
-    <h2 className="text-3xl md:text-4xl font-bold mb-6">
-      Ready to Modernize Your Restaurant?
-    </h2>
-    <p className="text-lg md:text-xl mb-8">
-      Join thousands of restaurants using Krave Menus to streamline operations.
-    </p>
-    <a
-      href="#pricing"
-      className="bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-lg text-lg font-bold shadow-lg transition-all"
-    >
-      Get Started – It&apos;s Free for 14 Days
-    </a>
-  </div>
+          {/* 📝 CTA Content */}
+          <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Ready to Modernize Your Restaurant?
+            </h2>
+            <p className="text-lg md:text-xl mb-8">
+              Join thousands of restaurants using Krave Menus to streamline operations.
+            </p>
+            <a
+              href="#pricing"
+              className="bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-lg text-lg font-bold shadow-lg transition-all"
+            >
+              Get Started – It&apos;s Free for 14 Days
+            </a>
+          </div>
 
-  {/* 🌊 Bottom Wave (Image) */}
-  <div className="absolute bottom-0 left-0 w-full translate-y-[99%] rotate-180">
-    <img 
-      src="/path-to-your-wave-image.png" // Same image (flipped)
-      alt="Wave Decoration"
-      className="w-full h-[100px] object-cover" // Match top wave height
-    />
-  </div>
-</section>
+          {/* 🌊 Bottom Wave (Image) */}
+          <div className="absolute bottom-0 left-0 w-full translate-y-[99%] rotate-180">
+            <img
+              src="/path-to-your-wave-image.png" // Same image (flipped)
+              alt="Wave Decoration"
+              className="w-full h-[100px] object-cover" // Match top wave height
+            />
+          </div>
+        </section>
 
         {/* Contact */}
         <section id="contact" className="py-20 px-6">
@@ -390,7 +464,7 @@ export default function Home() {
                 Our team is here to help you get started
               </p>
             </div>
-            
+
             <div className="bg-[#ffffff] rounded-xl shadow-lg p-8 md:p-12">
               <form className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
