@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '../../firebase/firebaseConfig';
+import { auth, db } from '@firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
@@ -9,13 +9,13 @@ import Link from 'next/link';
 // Dashboard Components
 import OrdersSummary from '@/components/OrdersSummary';
 import SalesDashboard from '@/components/SalesDashboard';
-import CustomersDashboard from '../../components/CustomersDashboard';
-import MenuItemsDashboard from '../../components/MenuItemsDashboard';
-import RecentOrders from '../../components/RecentOrders';
-import AnalyticsGraph from '../../components/AnalyticsGraph';
-import OpeningHoursDashboard from '../../components/OpeningHoursDashboard';
-import MenuManagement from '../../components/MenuManagement';
-import BranchManager from '../../components/BranchManager';
+import CustomersDashboard from '@components/CustomersDashboard';
+import MenuItemsDashboard from '@components/MenuItemsDashboard';
+import RecentOrders from '@components/RecentOrders';
+import AnalyticsGraph from '@components/AnalyticsGraph';
+import OpeningHoursDashboard from '@components/OpeningHoursDashboard';
+import MenuManagement from '@components/MenuManagement';
+import BranchManager from '@components/BranchManager';
 
 export default function DashboardPage() {
     const [restaurantData, setRestaurantData] = useState(null);

@@ -1,16 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { db } from '../../firebase/firebaseConfig';
+import { db } from '@firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
 
-import MenuItem from '../../components/MenuItem';
-import LocationPicker from '../../components/LocationPicker';
-import StepModal from '../../components/StepModal';
-import PaymentStep from '../../components/PaymentStep';
-import RestaurantFooter from '../../components/RestaurantFooter';
-import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity, removeItemFromCart } from '../../utils/cartService';
-import { createOrder, clearCart } from '../../utils/orderService';
-import { isRestaurantOpen } from '../../utils/openingHours';
+import MenuItem from '@components/MenuItem';
+import LocationPicker from '@components/LocationPicker';
+import StepModal from '@components/StepModal';
+import PaymentStep from '@components/PaymentStep';
+import RestaurantFooter from '@components/RestaurantFooter';
+import { getCart, addItemToCart, createCart, subscribeToCart, updateCartItemQuantity, removeItemFromCart } from '@utils/cartService';
+import { createOrder, clearCart } from '@utils/orderService';
+import { isRestaurantOpen } from '@utils/openingHours';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 
