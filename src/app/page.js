@@ -1,12 +1,12 @@
 'use client';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { FaQrcode, FaChartLine, FaMobileAlt, FaPalette, FaCrown, FaCheck } from 'react-icons/fa';
 import { IoRestaurant } from 'react-icons/io5';
 import { MdSupportAgent } from 'react-icons/md';
-import PhoneMockupSlider from '../components/PhoneMockupSlider';
-import AnimatedContent from '../components/AnimatedContent'
-import ContactForm from '../components/ContactForm';
+import PhoneMockupSlider from '@/components/PhoneMockupSlider';
+import AnimatedContent from '@/components/AnimatedContent'
+import ContactForm from '@/components/ContactForm';
 import { useState } from 'react';
 export default function Home() {
   const [isYearly, setIsYearly] = useState(true);
