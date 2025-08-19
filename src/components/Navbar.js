@@ -34,9 +34,9 @@ export default function Navbar() {
             <Link href="#pricing" className="text-gray-700 hover:text-[#ffd200] font-medium transition">
               Pricing
             </Link>
-            <Link href="#testimonials" className="text-gray-700 hover:text-[#ffd200] font-medium transition">
+            {/* <Link href="#testimonials" className="text-gray-700 hover:text-[#ffd200] font-medium transition">
               Testimonials
-            </Link>
+            </Link> */}
             <Link href="#contact" className="text-gray-700 hover:text-[#ffd200] font-medium transition">
               Contact
             </Link>
@@ -105,13 +105,13 @@ export default function Navbar() {
           >
             Pricing
           </Link>
-          <Link 
+          {/* <Link 
             href="#testimonials" 
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#ffd200] hover:bg-gray-50"
             onClick={() => setIsOpen(false)}
           >
             Testimonials
-          </Link>
+          </Link> */}
           <Link 
             href="#contact" 
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#ffd200] hover:bg-gray-50"
