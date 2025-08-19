@@ -204,7 +204,7 @@ export default function Home() {
             </div>
             <h3 className="text-2xl font-bold mb-3">Custom Branding</h3>
             <p className="text-gray-700">
-              Match your restaurant's aesthetic with custom styling options.
+              Match your restaurant&apos;s aesthetic with custom styling options.
             </p>
           </div>
         </AnimatedContent>
