@@ -1,5 +1,5 @@
 // utils/orderService.js
-import { db } from '@/firebase/firebaseConfig';
+import { db } from '../firebase/firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function createOrder(orderData) {

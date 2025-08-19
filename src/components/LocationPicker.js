@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
-import { generateMapUrl } from '@/utils/map';
+import { generateMapUrl } from '../utils/map';
 
 export default function LocationPicker({ onBack, onConfirm, initialLocation }) {
   const { isLoaded } = useJsApiLoader({

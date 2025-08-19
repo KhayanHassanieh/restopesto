@@ -1,6 +1,6 @@
 'use client';
 import { FaInstagram, FaFacebook, FaTiktok } from 'react-icons/fa';
-import { daysOfWeek, formatTime } from '@/utils/openingHours';
+import { daysOfWeek, formatTime } from '../utils/openingHours';
 
 export default function RestaurantFooter({ hours, instagramURL, tiktokURL, facebookURL, primaryColor }) {
   const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
