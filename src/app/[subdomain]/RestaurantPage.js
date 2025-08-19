@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { db } from '@firebase/firebaseConfig';
+import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
 
 import MenuItem from '@components/MenuItem';
