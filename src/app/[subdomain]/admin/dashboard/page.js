@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 // Dashboard Components
 import OrdersSummary from '@/components/OrdersSummary';
-import SalesDashboard from '@SalesDashboard';
+import SalesDashboard from '@/components/SalesDashboard';
 import CustomersDashboard from '../../components/CustomersDashboard';
 import MenuItemsDashboard from '../../components/MenuItemsDashboard';
 import RecentOrders from '../../components/RecentOrders';
