@@ -4,7 +4,7 @@ import { db } from '@/firebase/firebaseConfig';
 import { collection, getDocs, getDoc, doc, query, where, updateDoc, orderBy } from 'firebase/firestore';
 
 import MenuItem from '@components/MenuItem';
-import LocationPicker from '@components/LocationPicker';
+import LocationPicker from '@/components/LocationPicker';
 import StepModal from '@components/StepModal';
 import PaymentStep from '@components/PaymentStep';
 import RestaurantFooter from '@components/RestaurantFooter';
